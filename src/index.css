@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-ink text-white/90 font-sans antialiased;
+    /* Mesh de gradientes mundialista: dorado de la copa arriba + césped y azul */
+    background-image:
+      radial-gradient(70% 45% at 50% -5%, rgba(255, 200, 61, 0.16) 0%, transparent 60%),
+      radial-gradient(60% 50% at 12% 8%, rgba(45, 123, 255, 0.16) 0%, transparent 60%),
+      radial-gradient(55% 45% at 92% 12%, rgba(0, 229, 160, 0.16) 0%, transparent 55%),
+      radial-gradient(80% 60% at 50% 112%, rgba(0, 229, 160, 0.1) 0%, transparent 60%);
+    background-attachment: fixed;
+  }
+
+  /* Tipografías */
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: '"Clash Display"', system-ui, sans-serif;
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  /* Tarjeta de vidrio ahumado reutilizable */
+  .glass {
+    @apply border border-white/10 bg-ink/70 backdrop-blur-xl;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

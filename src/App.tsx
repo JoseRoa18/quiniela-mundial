@@ -1,0 +1,147 @@
+import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { LayoutGrid, ListChecks, LogOut, Swords, Trophy } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { useAuth } from './hooks/useAuth';
+import { useCelebration } from './hooks/useCelebration';
+import { stageForMatchday, HOST_FLAGS } from './lib/worldcup';
+import Auth from './components/Auth';
+import MatchList from './components/MatchList';
+import Leaderboard from './components/Leaderboard';
+import Groups from './components/Groups';
+import Knockout from './components/Knockout';
+
+const MATCHDAY = 1;
+type Tab = 'matches' | 'groups' | 'knockout' | 'leaderboard';
+
+const TABS: Array<{ id: Tab; label: string; icon: LucideIcon }> = [
+  { id: 'matches', label: 'Partidos', icon: ListChecks },
+  { id: 'groups', label: 'Grupos', icon: LayoutGrid },
+  { id: 'knockout', label: 'Llaves', icon: Swords },
+  { id: 'leaderboard', label: 'Ranking', icon: Trophy },
+];
+
+export default function App() {
+  const { user, profile, loading, signIn, signUp, signOut } = useAuth();
+  const [tab, setTab] = useState<Tab>('matches');
+
+  // Confeti al hacer pleno (escucha Realtime)
+  useCelebration(user?.id);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-full items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-accent" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Auth signIn={signIn} signUp={signUp} />;
+  }
+
+  const stage = stageForMatchday(MATCHDAY);
+
+  return (
+    <div className="mx-auto flex min-h-full max-w-md flex-col px-4 pb-28 pt-6">
+      {/* Marca mundialista */}
+      <div className="mb-4 flex items-center justify-between">
+        <span className="inline-flex items-center gap-2 rounded-full bg-gold/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-gold ring-1 ring-gold/30">
+          <Trophy className="h-3.5 w-3.5" /> Copa Mundial 2026
+        </span>
+        <span className="text-base leading-none" aria-label="Anfitriones: Canadá, EE. UU. y México">
+          {HOST_FLAGS}
+        </span>
+      </div>
+
+      {/* Cabecera */}
+      <header className="mb-6 flex items-center justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-gold/80">{stage.label}</p>
+          <h1 className="text-xl font-bold text-white">
+            Hola, {profile?.username ?? 'jugador'}
+          </h1>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="rounded-2xl bg-accent/10 px-3 py-1.5 text-right ring-1 ring-accent/30">
+            <p className="text-[10px] uppercase tracking-wider text-accent/70">Puntos</p>
+            <p className="font-mono text-lg font-bold leading-none text-accent">
+              {profile?.total_points ?? 0}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={signOut}
+            aria-label="Cerrar sesión"
+            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 text-white/60 ring-1 ring-white/10 hover:text-white"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
+      </header>
+
+      {/* Contenido con transición entre pestañas */}
+      <main className="flex-1">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+          >
+            {tab === 'matches' && <MatchList userId={user.id} matchday={MATCHDAY} />}
+            {tab === 'groups' && <Groups />}
+            {tab === 'knockout' && <Knockout />}
+            {tab === 'leaderboard' && <Leaderboard currentUserId={user.id} matchday={null} />}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+
+      {/* Navegación inferior (glass) */}
+      <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md px-4 pb-5">
+        <div className="glass flex items-center gap-1 rounded-2xl p-1.5 shadow-2xl">
+          {TABS.map((t) => (
+            <TabButton
+              key={t.id}
+              active={tab === t.id}
+              onClick={() => setTab(t.id)}
+              icon={<t.icon className="h-[18px] w-[18px]" />}
+              label={t.label}
+            />
+          ))}
+        </div>
+      </nav>
+    </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="relative flex flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-semibold transition-colors"
+    >
+      {active && (
+        <motion.span
+          layoutId="tab-pill"
+          className="absolute inset-0 rounded-xl bg-accent/15 ring-1 ring-accent/40"
+          transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+        />
+      )}
+      <span className={`relative z-10 ${active ? 'text-accent' : 'text-white/50'}`}>{icon}</span>
+      <span className={`relative z-10 ${active ? 'text-accent' : 'text-white/45'}`}>{label}</span>
+    </button>
+  );
+}
