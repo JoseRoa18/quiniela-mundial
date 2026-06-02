@@ -10,8 +10,8 @@ import MatchList from './components/MatchList';
 import Leaderboard from './components/Leaderboard';
 import Groups from './components/Groups';
 import Knockout from './components/Knockout';
+import MatchdaySelector from './components/MatchdaySelector';
 
-const MATCHDAY = 1;
 type Tab = 'matches' | 'groups' | 'knockout' | 'leaderboard';
 
 const TABS: Array<{ id: Tab; label: string; icon: LucideIcon }> = [
@@ -24,6 +24,7 @@ const TABS: Array<{ id: Tab; label: string; icon: LucideIcon }> = [
 export default function App() {
   const { user, profile, loading, signIn, signUp, signOut } = useAuth();
   const [tab, setTab] = useState<Tab>('matches');
+  const [matchday, setMatchday] = useState(1);
 
   // Confeti al hacer pleno (escucha Realtime)
   useCelebration(user?.id);
@@ -40,7 +41,7 @@ export default function App() {
     return <Auth signIn={signIn} signUp={signUp} />;
   }
 
-  const stage = stageForMatchday(MATCHDAY);
+  const stage = stageForMatchday(matchday);
 
   return (
     <div className="mx-auto flex min-h-full max-w-md flex-col px-4 pb-28 pt-6">
@@ -90,7 +91,12 @@ export default function App() {
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.25 }}
           >
-            {tab === 'matches' && <MatchList userId={user.id} matchday={MATCHDAY} />}
+            {tab === 'matches' && (
+              <>
+                <MatchdaySelector value={matchday} onChange={setMatchday} />
+                <MatchList userId={user.id} matchday={matchday} />
+              </>
+            )}
             {tab === 'groups' && <Groups />}
             {tab === 'knockout' && <Knockout />}
             {tab === 'leaderboard' && <Leaderboard currentUserId={user.id} matchday={null} />}
