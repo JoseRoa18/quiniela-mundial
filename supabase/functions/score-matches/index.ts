@@ -17,7 +17,8 @@
 //    curl -X POST "https://<ref>.functions.supabase.co/score-matches" \
 //         -H "Authorization: Bearer <ANON_O_SERVICE_KEY>"
 // ============================================================================
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import webpush from 'npm:web-push@3.6.7';
 
 // ----------------------------------------------------------------------------
 //  Lógica de puntuación (autocontenida, idéntica a src/lib/calculatePoints.ts):
@@ -76,20 +77,43 @@ interface PredictionRow {
   used_wildcard: boolean;
 }
 
-// Envía un push reutilizando la Edge Function send-push (que tiene las claves VAPID).
-async function notify(user_id: string, title: string, body: string) {
-  try {
-    await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-push`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-      },
-      body: JSON.stringify({ user_id, title, body, url: '/' }),
-    });
-  } catch (_e) {
-    // No bloquear el cálculo de puntos si falla el push.
+// Configura VAPID una sola vez (los secrets son compartidos por todo el proyecto).
+let vapidReady = false;
+function ensureVapid(): boolean {
+  if (vapidReady) return true;
+  const pub = Deno.env.get('VAPID_PUBLIC_KEY');
+  const priv = Deno.env.get('VAPID_PRIVATE_KEY');
+  if (!pub || !priv) return false;
+  webpush.setVapidDetails(Deno.env.get('VAPID_SUBJECT') ?? 'mailto:admin@quiniela.app', pub, priv);
+  vapidReady = true;
+  return true;
+}
+
+// Envía el push DIRECTAMENTE (web-push + VAPID), sin depender de otra función.
+// Devuelve cuántas notificaciones se enviaron (o -1 si faltan los secrets VAPID).
+async function notify(supabase: SupabaseClient, user_id: string, title: string, body: string): Promise<number> {
+  if (!ensureVapid()) return -1;
+  const { data: subs } = await supabase
+    .from('push_subscriptions')
+    .select('endpoint, p256dh, auth')
+    .eq('user_id', user_id);
+  const payload = JSON.stringify({ title, body, url: '/' });
+  let sent = 0;
+  for (const s of subs ?? []) {
+    try {
+      await webpush.sendNotification(
+        { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+        payload,
+      );
+      sent++;
+    } catch (e) {
+      const code = (e as { statusCode?: number }).statusCode;
+      if (code === 404 || code === 410) {
+        await supabase.from('push_subscriptions').delete().eq('endpoint', s.endpoint);
+      }
+    }
   }
+  return sent;
 }
 
 Deno.serve(async (req: Request) => {
@@ -125,6 +149,7 @@ Deno.serve(async (req: Request) => {
   if (matchErr) return json({ error: matchErr.message }, 500);
 
   let scoredCount = 0;
+  let pushSent = 0;
   const details: Array<Record<string, unknown>> = [];
 
   for (const match of (matches ?? []) as MatchRow[]) {
@@ -158,20 +183,23 @@ Deno.serve(async (req: Request) => {
       if (upErr) return json({ error: upErr.message }, 500);
 
       // Notificar los plenos (lo más emocionante).
+      let pushed: number | undefined;
       if (result.outcome === 'pleno') {
-        await notify(
+        pushed = await notify(
+          supabase,
           p.user_id,
           '🎯 ¡PLENO!',
           `+${result.points} pts · ${match.home_team} ${match.home_score}-${match.away_score} ${match.away_team}`,
         );
+        if (pushed > 0) pushSent += pushed;
       }
 
       scoredCount++;
-      details.push({ prediction: p.id, points: result.points, outcome: result.outcome });
+      details.push({ prediction: p.id, points: result.points, outcome: result.outcome, pushed });
     }
   }
 
-  return json({ ok: true, scored: scoredCount, details });
+  return json({ ok: true, scored: scoredCount, pushSent, vapidConfigured: ensureVapid(), details });
 });
 
 function json(body: unknown, status = 200): Response {
