@@ -3,6 +3,9 @@ import { motion } from 'framer-motion';
 interface MatchdaySelectorProps {
   value: number;
   onChange: (matchday: number) => void;
+  /** Identificador único de la "píldora" animada. Debe ser distinto en cada
+   *  pestaña donde se use, o AnimatePresence(mode="wait") se bloquea al navegar. */
+  layoutId?: string;
 }
 
 /** Las 9 "jornadas" del Mundial, con etiqueta corta para los chips. */
@@ -18,7 +21,7 @@ const ROUNDS: Array<{ md: number; label: string }> = [
   { md: 9, label: 'Final' },
 ];
 
-export default function MatchdaySelector({ value, onChange }: MatchdaySelectorProps) {
+export default function MatchdaySelector({ value, onChange, layoutId = 'md-pill' }: MatchdaySelectorProps) {
   return (
     <div className="no-scrollbar -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">
       {ROUNDS.map(({ md, label }) => {
@@ -32,7 +35,7 @@ export default function MatchdaySelector({ value, onChange }: MatchdaySelectorPr
           >
             {active && (
               <motion.span
-                layoutId="md-pill"
+                layoutId={layoutId}
                 className="absolute inset-0 rounded-full bg-accent/15 ring-1 ring-accent/40"
                 transition={{ type: 'spring', stiffness: 500, damping: 40 }}
               />

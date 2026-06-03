@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { HelpCircle, LayoutGrid, ListChecks, LogOut, Swords, Trophy } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAuth } from './hooks/useAuth';
@@ -93,27 +93,25 @@ export default function App() {
         </div>
       </header>
 
-      {/* Contenido con transición entre pestañas */}
+      {/* Contenido con transición entre pestañas (sin mode="wait" para evitar
+          el bloqueo de AnimatePresence al salir de pestañas con animaciones layout). */}
       <main className="flex-1">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={tab}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.25 }}
-          >
-            {tab === 'matches' && (
-              <>
-                <MatchdaySelector value={matchday} onChange={setMatchday} />
-                <MatchList userId={user.id} matchday={matchday} />
-              </>
-            )}
-            {tab === 'groups' && <Groups />}
-            {tab === 'knockout' && <Knockout />}
-            {tab === 'leaderboard' && <RankingTab userId={user.id} username={profile?.username ?? ''} />}
-          </motion.div>
-        </AnimatePresence>
+        <motion.div
+          key={tab}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+        >
+          {tab === 'matches' && (
+            <>
+              <MatchdaySelector value={matchday} onChange={setMatchday} />
+              <MatchList userId={user.id} matchday={matchday} />
+            </>
+          )}
+          {tab === 'groups' && <Groups />}
+          {tab === 'knockout' && <Knockout />}
+          {tab === 'leaderboard' && <RankingTab userId={user.id} username={profile?.username ?? ''} />}
+        </motion.div>
       </main>
 
       <Rules open={rulesOpen} onClose={() => setRulesOpen(false)} />

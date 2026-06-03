@@ -47,7 +47,7 @@ export default function MatchdaySummary({ username }: { username: string }) {
 
   return (
     <div className="space-y-4">
-      <MatchdaySelector value={matchday} onChange={setMatchday} />
+      <MatchdaySelector value={matchday} onChange={setMatchday} layoutId="md-pill-resumen" />
 
       <p className="text-center text-sm font-bold text-gold">{stage.label}</p>
 
