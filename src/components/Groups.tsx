@@ -1,12 +1,15 @@
-import { motion } from 'framer-motion';
-import { useMemo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useMemo, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { useAllMatches } from '../hooks/useAllMatches';
 import { computeGroupStandings, groupLabel, type TeamStanding } from '../lib/standings';
+import { formatKickoff } from '../lib/worldcup';
+import type { Match } from '../types/database';
 
 /** Color del borde según posición: 1-2 clasifican, 3 mejor tercero, 4 fuera. */
 function posAccent(rank: number): string {
-  if (rank <= 2) return '#00E5A0'; // clasifica directo
-  if (rank === 3) return '#FFC83D'; // posible mejor tercero
+  if (rank <= 2) return '#00E5A0';
+  if (rank === 3) return '#FFC83D';
   return 'transparent';
 }
 
@@ -15,10 +18,7 @@ function StandingRow({ row, rank }: { row: TeamStanding; rank: number }) {
   return (
     <tr className="border-t border-white/5">
       <td className="py-2 pl-3 pr-1">
-        <span
-          className="inline-block h-4 w-1 rounded-full align-middle"
-          style={{ background: posAccent(rank) }}
-        />
+        <span className="inline-block h-4 w-1 rounded-full align-middle" style={{ background: posAccent(rank) }} />
         <span className="ml-2 font-mono text-xs text-white/50">{rank}</span>
       </td>
       <td className="py-2 pr-2">
@@ -42,7 +42,42 @@ function StandingRow({ row, rank }: { row: TeamStanding; rank: number }) {
   );
 }
 
-function GroupCard({ name, rows, index }: { name: string; rows: TeamStanding[]; index: number }) {
+function FixtureRow({ m }: { m: Match }) {
+  const played = m.status === 'finished' || m.status === 'in_progress';
+  const live = m.status === 'in_progress';
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 text-xs">
+      <span className="w-24 shrink-0 truncate capitalize text-white/35">{formatKickoff(m.start_time)}</span>
+      <span className="flex-1 truncate text-right font-medium text-white/80">{m.home_team}</span>
+      <span className="w-12 shrink-0 text-center font-mono font-bold text-white">
+        {played ? (
+          <span className={live ? 'text-red-400' : ''}>
+            {m.home_score ?? 0}-{m.away_score ?? 0}
+          </span>
+        ) : (
+          <span className="text-white/25">vs</span>
+        )}
+      </span>
+      <span className="flex-1 truncate font-medium text-white/80">{m.away_team}</span>
+    </div>
+  );
+}
+
+function GroupCard({
+  name,
+  rows,
+  fixtures,
+  open,
+  onToggle,
+  index,
+}: {
+  name: string;
+  rows: TeamStanding[];
+  fixtures: Match[];
+  open: boolean;
+  onToggle: () => void;
+  index: number;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
@@ -50,10 +85,13 @@ function GroupCard({ name, rows, index }: { name: string; rows: TeamStanding[]; 
       transition={{ duration: 0.35, delay: index * 0.04 }}
       className="overflow-hidden rounded-2xl border border-white/10 bg-ink/60 backdrop-blur-xl"
     >
-      <div className="flex items-center justify-between px-4 py-2.5">
+      <button type="button" onClick={onToggle} className="flex w-full items-center justify-between px-4 py-2.5">
         <h3 className="text-sm font-bold text-white">{groupLabel(name)}</h3>
-        <span className="text-[10px] uppercase tracking-wider text-gold/70">Mundial 2026</span>
-      </div>
+        <ChevronDown
+          className={`h-4 w-4 text-white/40 transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
       <table className="w-full border-collapse">
         <thead>
           <tr className="text-[10px] uppercase tracking-wider text-white/30">
@@ -70,16 +108,49 @@ function GroupCard({ name, rows, index }: { name: string; rows: TeamStanding[]; 
           ))}
         </tbody>
       </table>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden border-t border-white/5 bg-black/20"
+          >
+            <p className="px-3 pb-1 pt-2.5 text-[10px] font-bold uppercase tracking-wider text-gold/60">
+              Partidos del grupo
+            </p>
+            <div className="divide-y divide-white/5 pb-2">
+              {fixtures.map((m) => (
+                <FixtureRow key={m.id} m={m} />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
 
 export default function Groups() {
   const { matches, loading } = useAllMatches();
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   const groups = useMemo(() => {
     const map = computeGroupStandings(matches);
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [matches]);
+
+  const fixturesByGroup = useMemo(() => {
+    const map = new Map<string, Match[]>();
+    for (const m of matches) {
+      if (m.stage !== 'GROUP_STAGE' || !m.group_name) continue;
+      if (!map.has(m.group_name)) map.set(m.group_name, []);
+      map.get(m.group_name)!.push(m);
+    }
+    for (const list of map.values()) list.sort((a, b) => a.start_time.localeCompare(b.start_time));
+    return map;
   }, [matches]);
 
   if (loading) {
@@ -102,7 +173,6 @@ export default function Groups() {
 
   return (
     <div className="space-y-4">
-      {/* Leyenda */}
       <div className="flex items-center justify-center gap-4 text-[10px] text-white/40">
         <span className="flex items-center gap-1.5">
           <span className="inline-block h-2 w-2 rounded-full bg-accent" /> Clasifican
@@ -110,10 +180,19 @@ export default function Groups() {
         <span className="flex items-center gap-1.5">
           <span className="inline-block h-2 w-2 rounded-full bg-gold" /> Mejor 3.º
         </span>
+        <span className="text-white/25">· toca un grupo para ver sus partidos</span>
       </div>
 
       {groups.map(([name, rows], i) => (
-        <GroupCard key={name} name={name} rows={rows} index={i} />
+        <GroupCard
+          key={name}
+          name={name}
+          rows={rows}
+          fixtures={fixturesByGroup.get(name) ?? []}
+          open={openGroup === name}
+          onToggle={() => setOpenGroup((cur) => (cur === name ? null : name))}
+          index={i}
+        />
       ))}
     </div>
   );

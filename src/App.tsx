@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { LayoutGrid, ListChecks, LogOut, Swords, Trophy } from 'lucide-react';
+import { HelpCircle, LayoutGrid, ListChecks, LogOut, Swords, Trophy } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAuth } from './hooks/useAuth';
 import { useCelebration } from './hooks/useCelebration';
 import { stageForMatchday, HOST_FLAGS } from './lib/worldcup';
 import Auth from './components/Auth';
 import MatchList from './components/MatchList';
-import Leaderboard from './components/Leaderboard';
 import Groups from './components/Groups';
 import Knockout from './components/Knockout';
 import MatchdaySelector from './components/MatchdaySelector';
+import RankingTab from './components/RankingTab';
+import Rules from './components/Rules';
 
 type Tab = 'matches' | 'groups' | 'knockout' | 'leaderboard';
 
@@ -25,6 +26,7 @@ export default function App() {
   const { user, profile, loading, signIn, signUp, signOut } = useAuth();
   const [tab, setTab] = useState<Tab>('matches');
   const [matchday, setMatchday] = useState(1);
+  const [rulesOpen, setRulesOpen] = useState(false);
 
   // Confeti al hacer pleno (escucha Realtime)
   useCelebration(user?.id);
@@ -72,6 +74,14 @@ export default function App() {
           </div>
           <button
             type="button"
+            onClick={() => setRulesOpen(true)}
+            aria-label="Cómo funciona"
+            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 text-white/60 ring-1 ring-white/10 hover:text-white"
+          >
+            <HelpCircle className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
             onClick={signOut}
             aria-label="Cerrar sesión"
             className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 text-white/60 ring-1 ring-white/10 hover:text-white"
@@ -99,10 +109,12 @@ export default function App() {
             )}
             {tab === 'groups' && <Groups />}
             {tab === 'knockout' && <Knockout />}
-            {tab === 'leaderboard' && <Leaderboard currentUserId={user.id} matchday={null} />}
+            {tab === 'leaderboard' && <RankingTab userId={user.id} />}
           </motion.div>
         </AnimatePresence>
       </main>
+
+      <Rules open={rulesOpen} onClose={() => setRulesOpen(false)} />
 
       {/* Navegación inferior (glass) */}
       <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md px-4 pb-5">

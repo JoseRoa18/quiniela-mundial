@@ -48,3 +48,64 @@
     scrollbar-width: none;
   }
 }
+
+/* ---------- Cuadro de eliminatorias (bracket conectado) ---------- */
+@layer components {
+  .kbracket {
+    --kl: rgba(255, 255, 255, 0.14);
+    display: flex;
+    align-items: stretch;
+  }
+  .kround {
+    display: flex;
+    flex-direction: column;
+    min-width: 172px;
+  }
+  .khead {
+    height: 34px;
+    display: flex;
+    align-items: center;
+  }
+  .kties {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+  .ktie {
+    flex: 1 1 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 54px;
+    padding: 0 16px;
+  }
+  /* Conector de salida (bracket "]") en rondas que NO son la última */
+  .kround.has-next .ktie::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    width: 16px;
+    box-sizing: border-box;
+    border-right: 2px solid var(--kl);
+  }
+  .kround.has-next .ktie:nth-child(odd)::after {
+    top: 50%;
+    height: 50%;
+    border-top: 2px solid var(--kl);
+  }
+  .kround.has-next .ktie:nth-child(even)::after {
+    bottom: 50%;
+    height: 50%;
+    border-bottom: 2px solid var(--kl);
+  }
+  /* Conector de entrada en rondas que NO son la primera */
+  .kround.has-prev .ktie::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 16px;
+    height: 2px;
+    background: var(--kl);
+  }
+}
