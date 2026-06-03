@@ -17,7 +17,7 @@ import {
   motion,
   AnimatePresence,
 } from 'framer-motion';
-import { Check, Info, Loader2, Lock, Minus, Plus, Sparkles, Zap } from 'lucide-react';
+import { Check, Info, Loader2, Lock, Minus, Pencil, Plus, Sparkles, Zap } from 'lucide-react';
 import { stageForMatchday, formatKickoff } from '../lib/worldcup';
 
 /* -------------------------------- Tipos ---------------------------------- */
@@ -257,6 +257,8 @@ export default function MatchCard({
   const urgent = !locked && timeLeft.total <= 5 * 60_000; // < 5 min
   const canUseWildcard = wildcardAvailable || initialPrediction?.usedWildcard;
   const stage = stageForMatchday(matchday ?? 1);
+  // Partido ya pronosticado y aún editable -> se atenúa para distinguirlo.
+  const dim = predicted && !finished && !live;
 
   const setH = (v: number) => { dirty.current = true; setSave('idle'); setPredHome(v); };
   const setA = (v: number) => { dirty.current = true; setSave('idle'); setPredAway(v); };
@@ -296,9 +298,9 @@ export default function MatchCard({
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-40px' }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className={`relative overflow-hidden rounded-3xl border p-5 shadow-2xl backdrop-blur-xl ${
+        className={`relative overflow-hidden rounded-3xl border p-5 shadow-2xl backdrop-blur-xl transition-opacity ${
           isFeatured ? 'border-gold/50 bg-[#0B0F17]/85 shadow-goldGlow' : 'border-white/10 bg-[#0B0F17]/70'
-        }`}
+        } ${dim ? 'opacity-60 hover:opacity-100 focus-within:opacity-100' : ''}`}
       >
         {/* Cabecera: fase del Mundial + fecha + badges de estado */}
         <header className="mb-5 flex items-start justify-between gap-2">
@@ -427,10 +429,11 @@ export default function MatchCard({
               onClick={handleSave}
               disabled={locked || save === 'saving'}
               className="relative flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40"
-              style={{
-                background: predicted ? '#1FB68A' : ACCENT,
-                color: predicted ? '#FFFFFF' : '#04130D',
-              }}
+              style={
+                predicted
+                  ? { background: 'transparent', color: ACCENT, boxShadow: `inset 0 0 0 1.5px ${ACCENT}` }
+                  : { background: ACCENT, color: '#04130D' }
+              }
             >
               <AnimatePresence mode="wait" initial={false}>
                 {save === 'saving' ? (
@@ -470,7 +473,9 @@ export default function MatchCard({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
+                    className="flex items-center gap-2"
                   >
+                    {predicted && <Pencil className="h-4 w-4" />}
                     {predicted ? 'Editar pronóstico' : 'Guardar pronóstico'}
                   </motion.span>
                 )}
