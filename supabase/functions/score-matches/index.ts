@@ -61,6 +61,8 @@ function calculatePoints(input: {
 
 interface MatchRow {
   id: string;
+  home_team: string;
+  away_team: string;
   home_score: number | null;
   away_score: number | null;
   is_featured_match: boolean;
@@ -68,9 +70,26 @@ interface MatchRow {
 
 interface PredictionRow {
   id: string;
+  user_id: string;
   predicted_home: number;
   predicted_away: number;
   used_wildcard: boolean;
+}
+
+// Envía un push reutilizando la Edge Function send-push (que tiene las claves VAPID).
+async function notify(user_id: string, title: string, body: string) {
+  try {
+    await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-push`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+      },
+      body: JSON.stringify({ user_id, title, body, url: '/' }),
+    });
+  } catch (_e) {
+    // No bloquear el cálculo de puntos si falla el push.
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -98,7 +117,7 @@ Deno.serve(async (req: Request) => {
   // ----- Tarea por defecto: calcular puntos de partidos finalizados -----
   const { data: matches, error: matchErr } = await supabase
     .from('matches')
-    .select('id, home_score, away_score, is_featured_match')
+    .select('id, home_team, away_team, home_score, away_score, is_featured_match')
     .eq('status', 'finished')
     .not('home_score', 'is', null)
     .not('away_score', 'is', null);
@@ -112,7 +131,7 @@ Deno.serve(async (req: Request) => {
     // Solo pronósticos aún sin calcular para este partido
     const { data: preds, error: predErr } = await supabase
       .from('predictions')
-      .select('id, predicted_home, predicted_away, used_wildcard')
+      .select('id, user_id, predicted_home, predicted_away, used_wildcard')
       .eq('match_id', match.id)
       .is('points_earned', null);
 
@@ -137,6 +156,15 @@ Deno.serve(async (req: Request) => {
         .eq('id', p.id);
 
       if (upErr) return json({ error: upErr.message }, 500);
+
+      // Notificar los plenos (lo más emocionante).
+      if (result.outcome === 'pleno') {
+        await notify(
+          p.user_id,
+          '🎯 ¡PLENO!',
+          `+${result.points} pts · ${match.home_team} ${match.home_score}-${match.away_score} ${match.away_team}`,
+        );
+      }
 
       scoredCount++;
       details.push({ prediction: p.id, points: result.points, outcome: result.outcome });
