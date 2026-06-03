@@ -14,6 +14,7 @@ import RankingTab from './components/RankingTab';
 import Rules from './components/Rules';
 import { MatchDetailProvider } from './components/MatchDetail';
 import AchievementWatcher from './components/AchievementWatcher';
+import PushButton from './components/PushButton';
 
 type Tab = 'matches' | 'groups' | 'knockout' | 'leaderboard';
 
@@ -61,20 +62,21 @@ export default function App() {
       </div>
 
       {/* Cabecera */}
-      <header className="mb-6 flex items-center justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-gold/80">{stage.label}</p>
-          <h1 className="text-xl font-bold text-white">
+      <header className="mb-6 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-xs font-semibold uppercase tracking-widest text-gold/80">{stage.label}</p>
+          <h1 className="truncate text-xl font-bold text-white">
             Hola, {profile?.username ?? 'jugador'}
           </h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-1.5">
           <div className="rounded-2xl bg-accent/10 px-3 py-1.5 text-right ring-1 ring-accent/30">
             <p className="text-[10px] uppercase tracking-wider text-accent/70">Puntos</p>
             <p className="font-mono text-lg font-bold leading-none text-accent">
               {profile?.total_points ?? 0}
             </p>
           </div>
+          <PushButton userId={user.id} />
           <button
             type="button"
             onClick={() => setRulesOpen(true)}
