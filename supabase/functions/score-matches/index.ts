@@ -18,7 +18,46 @@
 //         -H "Authorization: Bearer <ANON_O_SERVICE_KEY>"
 // ============================================================================
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { calculatePoints } from '../_shared/scoring.ts';
+
+// ----------------------------------------------------------------------------
+//  Lógica de puntuación (autocontenida, idéntica a src/lib/calculatePoints.ts):
+//   Pleno 3 / Tendencia 1 / Fallo 0 · Destacado ×2 · Comodín ×2 si acierta,
+//   o -1 fijo si falla. Los multiplicadores se apilan.
+// ----------------------------------------------------------------------------
+function outcomeSign(home: number, away: number): 'H' | 'D' | 'A' {
+  if (home > away) return 'H';
+  if (home < away) return 'A';
+  return 'D';
+}
+
+function calculatePoints(input: {
+  predictedHome: number;
+  predictedAway: number;
+  actualHome: number;
+  actualAway: number;
+  isFeaturedMatch?: boolean;
+  usedWildcard?: boolean;
+}): { points: number; outcome: 'pleno' | 'tendencia' | 'miss' } {
+  const { predictedHome, predictedAway, actualHome, actualAway } = input;
+  const isFeaturedMatch = input.isFeaturedMatch ?? false;
+  const usedWildcard = input.usedWildcard ?? false;
+
+  const exact = predictedHome === actualHome && predictedAway === actualAway;
+  const sameTrend = outcomeSign(predictedHome, predictedAway) === outcomeSign(actualHome, actualAway);
+
+  let outcome: 'pleno' | 'tendencia' | 'miss';
+  let basePoints: number;
+  if (exact) { outcome = 'pleno'; basePoints = 3; }
+  else if (sameTrend) { outcome = 'tendencia'; basePoints = 1; }
+  else { outcome = 'miss'; basePoints = 0; }
+
+  const hit = outcome === 'pleno' || outcome === 'tendencia';
+  if (!hit && usedWildcard) return { points: -1, outcome };
+
+  const featuredMult = isFeaturedMatch ? 2 : 1;
+  const wildcardMult = hit && usedWildcard ? 2 : 1;
+  return { points: basePoints * featuredMult * wildcardMult, outcome };
+}
 
 interface MatchRow {
   id: string;
