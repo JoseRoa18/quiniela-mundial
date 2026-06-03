@@ -18,7 +18,8 @@ export default function AchievementWatcher({ userId }: { userId: string }) {
   // Detectar logros nuevos
   useEffect(() => {
     if (loading) return;
-    const key = 'ach_seen_' + userId;
+    // v2: se reinició tras limpiar la BD (las marcas viejas ya no aplican).
+    const key = 'ach_seen_v2_' + userId;
     let seen: string[] = [];
     try {
       seen = JSON.parse(localStorage.getItem(key) || '[]');
