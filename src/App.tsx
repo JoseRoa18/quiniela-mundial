@@ -13,6 +13,7 @@ import MatchdaySelector from './components/MatchdaySelector';
 import RankingTab from './components/RankingTab';
 import Rules from './components/Rules';
 import { MatchDetailProvider } from './components/MatchDetail';
+import AchievementWatcher from './components/AchievementWatcher';
 
 type Tab = 'matches' | 'groups' | 'knockout' | 'leaderboard';
 
@@ -115,6 +116,7 @@ export default function App() {
       </main>
 
       <Rules open={rulesOpen} onClose={() => setRulesOpen(false)} />
+      <AchievementWatcher userId={user.id} />
 
       {/* Navegación inferior (glass) */}
       <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md px-4 pb-5">

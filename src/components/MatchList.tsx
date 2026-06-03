@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import MatchCard from './MatchCard';
 import { useMatches } from '../hooks/useMatches';
 import { usePredictions } from '../hooks/usePredictions';
+import { useProgressive } from '../hooks/useProgressive';
 import { useMatchDetail } from './MatchDetail';
 
 interface MatchListProps {
@@ -11,33 +11,11 @@ interface MatchListProps {
   matchday?: number;
 }
 
-const PAGE = 5; // cuántos partidos se muestran al inicio y por cada "carga"
-
 export default function MatchList({ userId, matchday = 1 }: MatchListProps) {
   const { matches, loading } = useMatches(matchday);
   const { byMatch, wildcardUsed, savePrediction } = usePredictions(userId, matchday);
   const { open } = useMatchDetail();
-
-  // Carga progresiva: empieza con PAGE y suma más al acercarse al final.
-  const [visible, setVisible] = useState(PAGE);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => setVisible(PAGE), [matchday]);
-
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setVisible((v) => Math.min(v + PAGE, matches.length));
-        }
-      },
-      { rootMargin: '300px' },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [matches.length, visible]);
+  const { visible, sentinelRef, hasMore } = useProgressive(matches.length, 5, matchday);
 
   if (loading) {
     return (
@@ -58,7 +36,6 @@ export default function MatchList({ userId, matchday = 1 }: MatchListProps) {
   }
 
   const shown = matches.slice(0, visible);
-  const hasMore = visible < matches.length;
 
   return (
     <div className="space-y-4">

@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMemo, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Loader2 } from 'lucide-react';
 import { useAllMatches } from '../hooks/useAllMatches';
+import { useProgressive } from '../hooks/useProgressive';
 import { computeGroupStandings, groupLabel, type TeamStanding } from '../lib/standings';
 import { formatKickoff } from '../lib/worldcup';
 import { useMatchDetail } from './MatchDetail';
@@ -155,6 +156,8 @@ export default function Groups() {
     return map;
   }, [matches]);
 
+  const { visible, sentinelRef, hasMore } = useProgressive(groups.length, 4);
+
   if (loading) {
     return (
       <div className="space-y-3">
@@ -185,7 +188,7 @@ export default function Groups() {
         <span className="text-white/25">· toca un grupo para ver sus partidos</span>
       </div>
 
-      {groups.map(([name, rows], i) => (
+      {groups.slice(0, visible).map(([name, rows], i) => (
         <GroupCard
           key={name}
           name={name}
@@ -196,6 +199,13 @@ export default function Groups() {
           index={i}
         />
       ))}
+
+      {hasMore && (
+        <div ref={sentinelRef} className="flex items-center justify-center gap-2 py-4 text-xs text-white/40">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Cargando más grupos… ({Math.min(visible, groups.length)}/{groups.length})
+        </div>
+      )}
     </div>
   );
 }

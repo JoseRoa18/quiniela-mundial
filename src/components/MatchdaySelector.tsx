@@ -23,7 +23,7 @@ const ROUNDS: Array<{ md: number; label: string }> = [
 
 export default function MatchdaySelector({ value, onChange, layoutId = 'md-pill' }: MatchdaySelectorProps) {
   return (
-    <div className="no-scrollbar -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">
+    <div className="no-scrollbar -mx-4 mb-3 flex gap-2 overflow-x-auto px-4 py-1.5">
       {ROUNDS.map(({ md, label }) => {
         const active = md === value;
         return (

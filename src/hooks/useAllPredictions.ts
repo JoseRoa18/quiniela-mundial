@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Prediction } from '../types/database';
 
+// Contador para nombres de canal únicos (evita colisiones cuando el hook se
+// usa en varios componentes a la vez, p. ej. el watcher de logros + Mis pron.).
+let channelSeq = 0;
+
 /**
  * Trae TODOS los pronósticos del usuario (todas las jornadas) con Realtime.
  * Lo usa la vista "Mis pronósticos".
@@ -28,7 +32,7 @@ export function useAllPredictions(userId: string | undefined) {
     void load();
 
     const channel = supabase
-      .channel('all-my-predictions')
+      .channel(`all-my-predictions-${++channelSeq}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'predictions', filter: `user_id=eq.${userId}` },

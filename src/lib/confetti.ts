@@ -41,3 +41,23 @@ export function celebratePleno(): void {
     colors,
   });
 }
+
+/**
+ * Celebración dorada para el desbloqueo de un logro: una lluvia desde arriba
+ * con tonos de oro (efecto trofeo).
+ */
+export function celebrateAchievement(): void {
+  const colors = [GOLD, '#FFE7A0', ACCENT, '#FFFFFF'];
+  confetti({
+    particleCount: 80,
+    spread: 70,
+    startVelocity: 40,
+    origin: { y: 0.25 },
+    colors,
+    scalar: 1.1,
+  });
+  setTimeout(() => {
+    confetti({ particleCount: 40, angle: 60, spread: 55, origin: { x: 0, y: 0.35 }, colors });
+    confetti({ particleCount: 40, angle: 120, spread: 55, origin: { x: 1, y: 0.35 }, colors });
+  }, 150);
+}

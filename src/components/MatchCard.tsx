@@ -426,8 +426,11 @@ export default function MatchCard({
               whileTap={locked ? undefined : { scale: 0.97 }}
               onClick={handleSave}
               disabled={locked || save === 'saving'}
-              className="relative flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-2.5 text-sm font-bold text-[#04130D] disabled:cursor-not-allowed disabled:opacity-40"
-              style={{ background: ACCENT }}
+              className="relative flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40"
+              style={{
+                background: predicted ? '#1FB68A' : ACCENT,
+                color: predicted ? '#FFFFFF' : '#04130D',
+              }}
             >
               <AnimatePresence mode="wait" initial={false}>
                 {save === 'saving' ? (
