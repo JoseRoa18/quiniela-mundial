@@ -242,6 +242,7 @@ export default function MatchCard({
   const [predAway, setPredAway] = useState(initialPrediction?.away ?? 0);
   const [wildcard, setWildcard] = useState(initialPrediction?.usedWildcard ?? false);
   const [save, setSave] = useState<SaveStatus>('idle');
+  const [predicted, setPredicted] = useState(!!initialPrediction);
   const dirty = useRef(false);
 
   // Tick del contador cada segundo
@@ -279,6 +280,7 @@ export default function MatchCard({
       });
       haptic([10, 30, 10] as unknown as number);
       setSave('success');
+      setPredicted(true);
       dirty.current = false;
       setTimeout(() => setSave('idle'), 1800);
     } catch {
@@ -333,6 +335,13 @@ export default function MatchCard({
             ) : finished ? (
               <span className="text-[11px] font-semibold uppercase tracking-wider text-white/40">
                 Finalizado
+              </span>
+            ) : predicted ? (
+              <span
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                style={{ background: `${ACCENT}1A`, color: ACCENT }}
+              >
+                <Check className="h-3.5 w-3.5" strokeWidth={3} /> Pronosticado
               </span>
             ) : null}
           </div>
@@ -459,7 +468,7 @@ export default function MatchCard({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
-                    Guardar pronóstico
+                    {predicted ? 'Editar pronóstico' : 'Guardar pronóstico'}
                   </motion.span>
                 )}
               </AnimatePresence>

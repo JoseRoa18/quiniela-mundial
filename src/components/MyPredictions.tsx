@@ -6,6 +6,7 @@ import { useAllMatches } from '../hooks/useAllMatches';
 import { stageForMatchday, formatKickoff } from '../lib/worldcup';
 import { RESULT_META } from '../lib/results';
 import { useMatchDetail } from './MatchDetail';
+import Achievements from './Achievements';
 import type { Match, Prediction } from '../types/database';
 
 function PredictionRow({ pred, match, index }: { pred: Prediction; match: Match | undefined; index: number }) {
@@ -130,6 +131,9 @@ export default function MyPredictions({ userId }: { userId: string }) {
           <p className="text-[10px] uppercase tracking-wider text-white/40">Pronósticos</p>
         </div>
       </div>
+
+      {/* Logros */}
+      <Achievements predictions={predictions} />
 
       {/* Lista */}
       <div className="space-y-2.5">

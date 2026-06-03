@@ -2,15 +2,17 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Leaderboard from './Leaderboard';
 import MyPredictions from './MyPredictions';
+import MatchdaySummary from './MatchdaySummary';
 
-type View = 'table' | 'mine';
+type View = 'table' | 'mine' | 'summary';
 
 const SEGMENTS: Array<{ id: View; label: string }> = [
-  { id: 'table', label: 'Clasificación' },
-  { id: 'mine', label: 'Mis pronósticos' },
+  { id: 'table', label: 'Tabla' },
+  { id: 'mine', label: 'Mis pron.' },
+  { id: 'summary', label: 'Resumen' },
 ];
 
-export default function RankingTab({ userId }: { userId: string }) {
+export default function RankingTab({ userId, username }: { userId: string; username: string }) {
   const [view, setView] = useState<View>('table');
 
   return (
@@ -39,7 +41,9 @@ export default function RankingTab({ userId }: { userId: string }) {
         })}
       </div>
 
-      {view === 'table' ? <Leaderboard currentUserId={userId} matchday={null} /> : <MyPredictions userId={userId} />}
+      {view === 'table' && <Leaderboard currentUserId={userId} matchday={null} />}
+      {view === 'mine' && <MyPredictions userId={userId} />}
+      {view === 'summary' && <MatchdaySummary username={username} />}
     </div>
   );
 }

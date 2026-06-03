@@ -111,7 +111,7 @@ export default function App() {
             )}
             {tab === 'groups' && <Groups />}
             {tab === 'knockout' && <Knockout />}
-            {tab === 'leaderboard' && <RankingTab userId={user.id} />}
+            {tab === 'leaderboard' && <RankingTab userId={user.id} username={profile?.username ?? ''} />}
           </motion.div>
         </AnimatePresence>
       </main>

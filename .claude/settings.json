@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -X POST https://eydfnsmdatwwxbxslcuj.supabase.co/functions/v1/score-matches -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZGZuc21kYXR3d3hieHNsY3VqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNTI0OTUsImV4cCI6MjA5NTkyODQ5NX0.KBENM4W9ncR5IdEh3iWMusdt8MBKk5zV8Sjj3q_ExkY' -H 'Content-Type: application/json' -w '\\\\nHTTP %{http_code}  ·  %{time_total}s\\\\n')"
+    ]
+  }
+}

@@ -1,4 +1,6 @@
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 import MatchCard from './MatchCard';
 import { useMatches } from '../hooks/useMatches';
 import { usePredictions } from '../hooks/usePredictions';
@@ -9,10 +11,33 @@ interface MatchListProps {
   matchday?: number;
 }
 
+const PAGE = 5; // cuántos partidos se muestran al inicio y por cada "carga"
+
 export default function MatchList({ userId, matchday = 1 }: MatchListProps) {
   const { matches, loading } = useMatches(matchday);
   const { byMatch, wildcardUsed, savePrediction } = usePredictions(userId, matchday);
   const { open } = useMatchDetail();
+
+  // Carga progresiva: empieza con PAGE y suma más al acercarse al final.
+  const [visible, setVisible] = useState(PAGE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => setVisible(PAGE), [matchday]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisible((v) => Math.min(v + PAGE, matches.length));
+        }
+      },
+      { rootMargin: '300px' },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [matches.length, visible]);
 
   if (loading) {
     return (
@@ -32,19 +57,19 @@ export default function MatchList({ userId, matchday = 1 }: MatchListProps) {
     );
   }
 
+  const shown = matches.slice(0, visible);
+  const hasMore = visible < matches.length;
+
   return (
-    <motion.div
-      className="space-y-4"
-      initial="hidden"
-      animate="show"
-      variants={{ show: { transition: { staggerChildren: 0.06 } } }}
-    >
-      {matches.map((m) => {
+    <div className="space-y-4">
+      {shown.map((m) => {
         const pred = byMatch.get(m.id);
         return (
           <motion.div
             key={m.id}
-            variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
           >
             <MatchCard
               matchId={m.id}
@@ -72,6 +97,13 @@ export default function MatchList({ userId, matchday = 1 }: MatchListProps) {
           </motion.div>
         );
       })}
-    </motion.div>
+
+      {hasMore && (
+        <div ref={sentinelRef} className="flex items-center justify-center gap-2 py-4 text-xs text-white/40">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Cargando más partidos… ({shown.length}/{matches.length})
+        </div>
+      )}
+    </div>
   );
 }
