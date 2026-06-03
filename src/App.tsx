@@ -12,6 +12,7 @@ import Knockout from './components/Knockout';
 import MatchdaySelector from './components/MatchdaySelector';
 import RankingTab from './components/RankingTab';
 import Rules from './components/Rules';
+import { MatchDetailProvider } from './components/MatchDetail';
 
 type Tab = 'matches' | 'groups' | 'knockout' | 'leaderboard';
 
@@ -46,6 +47,7 @@ export default function App() {
   const stage = stageForMatchday(matchday);
 
   return (
+    <MatchDetailProvider username={profile?.username ?? ''}>
     <div className="mx-auto flex min-h-full max-w-md flex-col px-4 pb-28 pt-6">
       {/* Marca mundialista */}
       <div className="mb-4 flex items-center justify-between">
@@ -131,6 +133,7 @@ export default function App() {
         </div>
       </nav>
     </div>
+    </MatchDetailProvider>
   );
 }
 

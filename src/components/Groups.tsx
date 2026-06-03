@@ -4,6 +4,7 @@ import { ChevronDown } from 'lucide-react';
 import { useAllMatches } from '../hooks/useAllMatches';
 import { computeGroupStandings, groupLabel, type TeamStanding } from '../lib/standings';
 import { formatKickoff } from '../lib/worldcup';
+import { useMatchDetail } from './MatchDetail';
 import type { Match } from '../types/database';
 
 /** Color del borde según posición: 1-2 clasifican, 3 mejor tercero, 4 fuera. */
@@ -43,10 +44,11 @@ function StandingRow({ row, rank }: { row: TeamStanding; rank: number }) {
 }
 
 function FixtureRow({ m }: { m: Match }) {
+  const { open } = useMatchDetail();
   const played = m.status === 'finished' || m.status === 'in_progress';
   const live = m.status === 'in_progress';
   return (
-    <div className="flex items-center gap-2 px-3 py-2 text-xs">
+    <button type="button" onClick={() => open(m)} className="flex w-full items-center gap-2 px-3 py-2 text-xs hover:bg-white/[0.03]">
       <span className="w-24 shrink-0 truncate capitalize text-white/35">{formatKickoff(m.start_time)}</span>
       <span className="flex-1 truncate text-right font-medium text-white/80">{m.home_team}</span>
       <span className="w-12 shrink-0 text-center font-mono font-bold text-white">
@@ -58,8 +60,8 @@ function FixtureRow({ m }: { m: Match }) {
           <span className="text-white/25">vs</span>
         )}
       </span>
-      <span className="flex-1 truncate font-medium text-white/80">{m.away_team}</span>
-    </div>
+      <span className="flex-1 truncate text-left font-medium text-white/80">{m.away_team}</span>
+    </button>
   );
 }
 

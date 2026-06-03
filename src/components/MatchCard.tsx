@@ -18,7 +18,7 @@ import {
   AnimatePresence,
   useReducedMotion,
 } from 'framer-motion';
-import { Check, Loader2, Lock, Minus, Plus, Sparkles, Zap } from 'lucide-react';
+import { Check, Info, Loader2, Lock, Minus, Plus, Sparkles, Zap } from 'lucide-react';
 import { stageForMatchday, formatKickoff } from '../lib/worldcup';
 
 /* -------------------------------- Tipos ---------------------------------- */
@@ -48,6 +48,8 @@ export interface MatchCardProps {
   wildcardAvailable?: boolean;
   /** Minutos antes del inicio en que se bloquea (default 30). */
   lockMinutesBefore?: number;
+  /** Abre el detalle del partido. */
+  onInfo?: () => void;
   onSave?: (data: {
     matchId: string;
     predictedHome: number;
@@ -228,6 +230,7 @@ export default function MatchCard({
   initialPrediction,
   wildcardAvailable = true,
   lockMinutesBefore = 30,
+  onInfo,
   onSave,
 }: MatchCardProps) {
   const reduce = useReducedMotion();
@@ -311,14 +314,18 @@ export default function MatchCard({
       >
         {/* Cabecera: fase del Mundial + fecha + badges de estado */}
         <header className="mb-5 flex items-start justify-between gap-2">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="truncate text-[11px] font-bold uppercase tracking-wider text-gold/90">
-              {stage.short}
+          <button
+            type="button"
+            onClick={onInfo}
+            className="flex min-w-0 flex-col items-start gap-0.5 text-left"
+          >
+            <span className="flex items-center gap-1 truncate text-[11px] font-bold uppercase tracking-wider text-gold/90">
+              {stage.short} <Info className="h-3 w-3 opacity-60" />
             </span>
             <span className="truncate text-[11px] capitalize text-white/40">
               {formatKickoff(startTime)}
             </span>
-          </div>
+          </button>
 
           <div className="flex shrink-0 flex-col items-end gap-1.5">
             {isFeatured && (

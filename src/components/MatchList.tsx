@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import MatchCard from './MatchCard';
 import { useMatches } from '../hooks/useMatches';
 import { usePredictions } from '../hooks/usePredictions';
+import { useMatchDetail } from './MatchDetail';
 
 interface MatchListProps {
   userId: string;
@@ -11,6 +12,7 @@ interface MatchListProps {
 export default function MatchList({ userId, matchday = 1 }: MatchListProps) {
   const { matches, loading } = useMatches(matchday);
   const { byMatch, wildcardUsed, savePrediction } = usePredictions(userId, matchday);
+  const { open } = useMatchDetail();
 
   if (loading) {
     return (
@@ -65,6 +67,7 @@ export default function MatchList({ userId, matchday = 1 }: MatchListProps) {
               }
               wildcardAvailable={!wildcardUsed || pred?.used_wildcard}
               onSave={savePrediction}
+              onInfo={() => open(m)}
             />
           </motion.div>
         );

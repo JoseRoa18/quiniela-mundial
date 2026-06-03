@@ -4,25 +4,23 @@ import { Sparkles, Target } from 'lucide-react';
 import { useAllPredictions } from '../hooks/useAllPredictions';
 import { useAllMatches } from '../hooks/useAllMatches';
 import { stageForMatchday, formatKickoff } from '../lib/worldcup';
-import type { Match, Prediction, PredictionResult } from '../types/database';
-
-const RESULT_META: Record<PredictionResult, { label: string; color: string; bg: string }> = {
-  pleno: { label: 'Pleno', color: '#00E5A0', bg: 'rgba(0,229,160,0.12)' },
-  tendencia: { label: 'Tendencia', color: '#2D7BFF', bg: 'rgba(45,123,255,0.12)' },
-  miss: { label: 'Fallo', color: '#FF5470', bg: 'rgba(255,84,112,0.12)' },
-  pending: { label: 'Pendiente', color: '#9AA6B2', bg: 'rgba(255,255,255,0.05)' },
-};
+import { RESULT_META } from '../lib/results';
+import { useMatchDetail } from './MatchDetail';
+import type { Match, Prediction } from '../types/database';
 
 function PredictionRow({ pred, match, index }: { pred: Prediction; match: Match | undefined; index: number }) {
+  const { open } = useMatchDetail();
   const meta = RESULT_META[pred.result_type];
   const played = match && (match.status === 'finished' || match.status === 'in_progress');
 
   return (
-    <motion.div
+    <motion.button
+      type="button"
+      onClick={() => match && open(match)}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.03 }}
-      className="rounded-2xl border border-white/10 bg-ink/60 p-3.5 backdrop-blur-xl"
+      className="block w-full rounded-2xl border border-white/10 bg-ink/60 p-3.5 text-left backdrop-blur-xl"
     >
       <div className="mb-2 flex items-center justify-between">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-gold/70">
@@ -74,7 +72,7 @@ function PredictionRow({ pred, match, index }: { pred: Prediction; match: Match 
           )}
         </div>
       </div>
-    </motion.div>
+    </motion.button>
   );
 }
 

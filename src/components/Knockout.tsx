@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useAllMatches } from '../hooks/useAllMatches';
 import { formatKickoff } from '../lib/worldcup';
+import { useMatchDetail } from './MatchDetail';
 import type { Match } from '../types/database';
 
 /** Rondas del cuadro principal, en orden. (El 3.º puesto va aparte, no conecta.) */
@@ -43,6 +44,7 @@ function TeamLine({ name, logo, score, show, winner }: {
 }
 
 function TieCard({ match }: { match: Match }) {
+  const { open } = useMatchDetail();
   const decided = match.status === 'finished' && match.home_score != null && match.away_score != null;
   const show = decided || match.status === 'in_progress';
   const live = match.status === 'in_progress';
@@ -50,8 +52,10 @@ function TieCard({ match }: { match: Match }) {
   const awayWins = decided && (match.away_score as number) > (match.home_score as number);
 
   return (
-    <div
-      className={`w-full space-y-1 rounded-lg border bg-ink/70 p-2 ${
+    <button
+      type="button"
+      onClick={() => open(match)}
+      className={`w-full space-y-1 rounded-lg border bg-ink/70 p-2 text-left ${
         live ? 'border-red-500/40' : 'border-white/10'
       }`}
     >
@@ -62,7 +66,7 @@ function TieCard({ match }: { match: Match }) {
           <span className="h-1 w-1 animate-pulse rounded-full bg-red-500" /> En vivo
         </p>
       )}
-    </div>
+    </button>
   );
 }
 
