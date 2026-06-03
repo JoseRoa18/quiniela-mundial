@@ -16,7 +16,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   motion,
   AnimatePresence,
-  useReducedMotion,
 } from 'framer-motion';
 import { Check, Info, Loader2, Lock, Minus, Plus, Sparkles, Zap } from 'lucide-react';
 import { stageForMatchday, formatKickoff } from '../lib/worldcup';
@@ -233,8 +232,6 @@ export default function MatchCard({
   onInfo,
   onSave,
 }: MatchCardProps) {
-  const reduce = useReducedMotion();
-
   const lockAt = useMemo(() => {
     const start = new Date(startTime).getTime();
     return start - lockMinutesBefore * 60_000;
@@ -292,25 +289,14 @@ export default function MatchCard({
 
   return (
     <div className="relative">
-      {/* Resplandor animado del partido destacado */}
-      {isFeatured && (
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute -inset-[2px] rounded-[26px] opacity-70 blur-[6px]"
-          style={{
-            background: `conic-gradient(from 0deg, ${GOLD}, ${ELECTRIC}, ${ACCENT}, ${GOLD})`,
-          }}
-          animate={reduce ? undefined : { rotate: 360 }}
-          transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
-        />
-      )}
-
       <motion.article
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-40px' }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0B0F17]/70 p-5 shadow-2xl backdrop-blur-xl"
+        className={`relative overflow-hidden rounded-3xl border p-5 shadow-2xl backdrop-blur-xl ${
+          isFeatured ? 'border-gold/50 bg-[#0B0F17]/85 shadow-goldGlow' : 'border-white/10 bg-[#0B0F17]/70'
+        }`}
       >
         {/* Cabecera: fase del Mundial + fecha + badges de estado */}
         <header className="mb-5 flex items-start justify-between gap-2">
