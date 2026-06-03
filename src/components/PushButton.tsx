@@ -23,8 +23,14 @@ export default function PushButton({ userId }: { userId: string }) {
       } else {
         await subscribeToPush(userId);
         setState('subscribed');
-        // Pequeño aviso local de confirmación.
-        new Notification('Quiniela Mundial 🏆', { body: '¡Notificaciones activadas!' });
+        // Aviso local de confirmación vía el service worker (en móvil NO se
+        // permite `new Notification(...)`, hay que usar showNotification).
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification('Quiniela Mundial 🏆', {
+          body: '¡Notificaciones activadas!',
+          icon: '/icon.svg',
+          badge: '/icon.svg',
+        });
       }
     } catch (e) {
       setState(await getPushState());
