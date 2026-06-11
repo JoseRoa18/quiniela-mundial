@@ -24,6 +24,13 @@ export function usePredictions(userId: string | undefined, matchday = 1) {
     setLoading(false);
   }, [userId, matchday]);
 
+  // Al cambiar de usuario/jornada, volver a estado "cargando" para que la lista
+  // espere a tener los pronósticos antes de dibujar las tarjetas (evita que se
+  // muestren vacías tras recargar).
+  useEffect(() => {
+    setLoading(true);
+  }, [userId, matchday]);
+
   useEffect(() => {
     void load();
   }, [load]);

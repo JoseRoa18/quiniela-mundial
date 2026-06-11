@@ -13,11 +13,11 @@ interface MatchListProps {
 
 export default function MatchList({ userId, matchday = 1 }: MatchListProps) {
   const { matches, loading } = useMatches(matchday);
-  const { byMatch, wildcardUsed, savePrediction } = usePredictions(userId, matchday);
+  const { byMatch, wildcardUsed, savePrediction, loading: predsLoading } = usePredictions(userId, matchday);
   const { open } = useMatchDetail();
   const { visible, sentinelRef, hasMore } = useProgressive(matches.length, 5, matchday);
 
-  if (loading) {
+  if (loading || predsLoading) {
     return (
       <div className="space-y-4">
         {[0, 1, 2].map((i) => (
