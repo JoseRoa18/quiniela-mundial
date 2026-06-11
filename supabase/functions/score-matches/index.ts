@@ -182,17 +182,23 @@ Deno.serve(async (req: Request) => {
 
       if (upErr) return json({ error: upErr.message }, 500);
 
-      // Notificar los plenos (lo más emocionante).
-      let pushed: number | undefined;
+      // Notificar a cada jugador SU resultado.
+      const real = `${match.home_team} ${match.home_score}-${match.away_score} ${match.away_team}`;
+      let title: string;
+      let body: string;
       if (result.outcome === 'pleno') {
-        pushed = await notify(
-          supabase,
-          p.user_id,
-          '🎯 ¡PLENO!',
-          `+${result.points} pts · ${match.home_team} ${match.home_score}-${match.away_score} ${match.away_team}`,
-        );
-        if (pushed > 0) pushSent += pushed;
+        title = '🎯 ¡PLENO!';
+        body = `+${result.points} pts · ${real}`;
+      } else if (result.outcome === 'tendencia') {
+        title = '✅ ¡Tendencia!';
+        body = `+${result.points} pts · acertaste el ganador · ${real}`;
+      } else {
+        title = '❌ Fallaste';
+        const pts = result.points >= 0 ? `+${result.points}` : `${result.points}`;
+        body = `${pts} pts · ${real} (tu ${p.predicted_home}-${p.predicted_away})`;
       }
+      const pushed = await notify(supabase, p.user_id, title, body);
+      if (pushed > 0) pushSent += pushed;
 
       scoredCount++;
       details.push({ prediction: p.id, points: result.points, outcome: result.outcome, pushed });
