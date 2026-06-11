@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { useAllMatches } from '../hooks/useAllMatches';
 import { useProgressive } from '../hooks/useProgressive';
+import ErrorState from './ErrorState';
 import { computeGroupStandings, groupLabel, type TeamStanding } from '../lib/standings';
 import { formatKickoff } from '../lib/worldcup';
 import { useMatchDetail } from './MatchDetail';
@@ -137,7 +138,7 @@ function GroupCard({
 }
 
 export default function Groups() {
-  const { matches, loading } = useAllMatches();
+  const { matches, loading, error, reload } = useAllMatches();
   const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   const groups = useMemo(() => {
@@ -167,6 +168,8 @@ export default function Groups() {
       </div>
     );
   }
+
+  if (error) return <ErrorState onRetry={reload} />;
 
   if (groups.length === 0) {
     return (

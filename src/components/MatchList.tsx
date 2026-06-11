@@ -5,6 +5,7 @@ import { useMatches } from '../hooks/useMatches';
 import { usePredictions } from '../hooks/usePredictions';
 import { useProgressive } from '../hooks/useProgressive';
 import { useMatchDetail } from './MatchDetail';
+import ErrorState from './ErrorState';
 
 interface MatchListProps {
   userId: string;
@@ -12,7 +13,7 @@ interface MatchListProps {
 }
 
 export default function MatchList({ userId, matchday = 1 }: MatchListProps) {
-  const { matches, loading } = useMatches(matchday);
+  const { matches, loading, error, reload } = useMatches(matchday);
   const { byMatch, wildcardUsed, savePrediction, loading: predsLoading } = usePredictions(userId, matchday);
   const { open } = useMatchDetail();
   const { visible, sentinelRef, hasMore } = useProgressive(matches.length, 5, matchday);
@@ -26,6 +27,8 @@ export default function MatchList({ userId, matchday = 1 }: MatchListProps) {
       </div>
     );
   }
+
+  if (error) return <ErrorState onRetry={reload} />;
 
   if (matches.length === 0) {
     return (

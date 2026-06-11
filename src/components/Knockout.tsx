@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useAllMatches } from '../hooks/useAllMatches';
 import { formatKickoff } from '../lib/worldcup';
 import { useMatchDetail } from './MatchDetail';
+import ErrorState from './ErrorState';
 import type { Match } from '../types/database';
 
 /** Rondas del cuadro principal, en orden. (El 3.º puesto va aparte, no conecta.) */
@@ -71,7 +72,7 @@ function TieCard({ match }: { match: Match }) {
 }
 
 export default function Knockout() {
-  const { matches, loading } = useAllMatches();
+  const { matches, loading, error, reload } = useAllMatches();
 
   const rounds = useMemo(
     () =>
@@ -93,6 +94,8 @@ export default function Knockout() {
       </div>
     );
   }
+
+  if (error) return <ErrorState onRetry={reload} />;
 
   if (rounds.length === 0) {
     return (

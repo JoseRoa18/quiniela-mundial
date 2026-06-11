@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Crown, Sparkles } from 'lucide-react';
 import { useLeaderboard } from '../hooks/useLeaderboard';
+import ErrorState from './ErrorState';
 import type { LeaderboardRow } from '../types/database';
 
 interface LeaderboardProps {
@@ -112,7 +113,9 @@ function Row({ row, isMe }: { row: LeaderboardRow; isMe: boolean }) {
 }
 
 export default function Leaderboard({ currentUserId, matchday = null }: LeaderboardProps) {
-  const { rows, loading } = useLeaderboard(matchday);
+  const { rows, loading, error, reload } = useLeaderboard(matchday);
+
+  if (error) return <ErrorState onRetry={reload} />;
 
   if (loading) {
     return (

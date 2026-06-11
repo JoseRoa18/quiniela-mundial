@@ -87,7 +87,7 @@ async function broadcast(supabase: SupabaseClient, title: string, body: string):
   }
 }
 
-interface PrevRow { external_id: number; api_status: string | null; home_score: number | null; away_score: number | null; }
+interface PrevRow { id: string; external_id: number; api_status: string | null; home_score: number | null; away_score: number | null; }
 
 Deno.serve(async (req: Request) => {
   const url = new URL(req.url);
@@ -121,7 +121,7 @@ Deno.serve(async (req: Request) => {
   const extIds = matches.map((m) => m.id);
   const { data: prevRows } = await supabase
     .from('matches')
-    .select('external_id, api_status, home_score, away_score')
+    .select('id, external_id, api_status, home_score, away_score')
     .in('external_id', extIds);
   const prev = new Map<number, PrevRow>();
   for (const r of (prevRows ?? []) as PrevRow[]) prev.set(r.external_id, r);
@@ -130,6 +130,7 @@ Deno.serve(async (req: Request) => {
   const PRE = ['SCHEDULED', 'TIMED'];
   const PLAY = ['IN_PLAY', 'PAUSED'];
   const events: Array<{ title: string; body: string }> = [];
+  const correctedMatchIds: string[] = []; // partidos ya finalizados cuyo marcador cambió
   for (const m of matches) {
     const p = prev.get(m.id);
     if (!p) continue; // partido nuevo: sin evento
@@ -137,6 +138,7 @@ Deno.serve(async (req: Request) => {
     const ns: string = m.status;
     const nh = m.score?.fullTime?.home ?? null;
     const naw = m.score?.fullTime?.away ?? null;
+    const scoreChanged = nh !== p.home_score || naw !== p.away_score;
     const home = m.homeTeam?.name ?? 'Local';
     const away = m.awayTeam?.name ?? 'Visitante';
     const marker = `${home} ${nh ?? 0}-${naw ?? 0} ${away}`;
@@ -149,8 +151,13 @@ Deno.serve(async (req: Request) => {
       events.push({ title: '🏁 Final del partido', body: marker });
     }
     // Gol: cambió el marcador mientras se juega
-    if (pa && PLAY.includes(pa) && PLAY.includes(ns) && (nh !== p.home_score || naw !== p.away_score)) {
+    if (pa && PLAY.includes(pa) && PLAY.includes(ns) && scoreChanged) {
       events.push({ title: '🥅 ¡GOOOL!', body: marker });
+    }
+    // Corrección: el partido YA estaba finalizado y el marcador cambió -> recalcular.
+    if (pa === 'FINISHED' && scoreChanged) {
+      correctedMatchIds.push(p.id);
+      events.push({ title: '🔄 Resultado corregido', body: `${marker} · puntos actualizados` });
     }
   }
 
@@ -158,6 +165,16 @@ Deno.serve(async (req: Request) => {
   const rows = matches.map(toRow);
   const { error } = await supabase.from('matches').upsert(rows, { onConflict: 'external_id' });
   if (error) return json({ error: error.message }, 500);
+
+  // ----- Re-cálculo por corrección de resultado -----
+  // Si un partido ya finalizado cambió de marcador, reseteamos sus pronósticos
+  // (points_earned = null) para que score-matches los vuelva a calcular bien.
+  if (correctedMatchIds.length > 0) {
+    await supabase
+      .from('predictions')
+      .update({ points_earned: null, result_type: 'pending' })
+      .in('match_id', correctedMatchIds);
+  }
 
   // ----- Enviar eventos (broadcast) -----
   if (!silent) {
@@ -172,6 +189,7 @@ Deno.serve(async (req: Request) => {
     live: liveCount,
     finished: finishedCount,
     events: events.length,
+    corrected: correctedMatchIds.length,
     notified: silent ? 0 : events.length,
   });
 });
