@@ -22,6 +22,22 @@ function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 }
 
+// Autoriza solo al service_role (servidor/crons), NO a la anon key (pública).
+// Acepta coincidencia exacta con el secret o, de forma robusta, que el JWT
+// tenga el claim role === 'service_role' (la plataforma ya valida la firma).
+function isServiceRole(req: Request): boolean {
+  const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
+  if (!token) return false;
+  if (token === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) return true;
+  try {
+    const part = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(part));
+    return payload.role === 'service_role';
+  } catch {
+    return false;
+  }
+}
+
 interface SubRow {
   endpoint: string;
   p256dh: string;
@@ -29,10 +45,8 @@ interface SubRow {
 }
 
 Deno.serve(async (req: Request) => {
-  // Seguridad: solo se puede invocar con el service_role (no con la anon key,
-  // que es pública). Evita que cualquiera haga broadcast de notificaciones.
-  const auth = req.headers.get('Authorization') ?? '';
-  if (auth !== `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`) {
+  // Seguridad: solo el service_role (servidor/crons), no la anon key (pública).
+  if (!isServiceRole(req)) {
     return json({ error: 'No autorizado' }, 401);
   }
 
