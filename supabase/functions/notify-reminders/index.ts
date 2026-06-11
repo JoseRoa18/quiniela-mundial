@@ -11,20 +11,42 @@
 //
 //  Despliegue: pegar en el editor del dashboard como función "notify-reminders".
 // ============================================================================
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import webpush from 'npm:web-push@3.6.7';
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 }
 
-async function sendPush(serviceUrl: string, serviceKey: string, user_id: string, title: string, body: string) {
-  try {
-    await fetch(`${serviceUrl}/functions/v1/send-push`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}` },
-      body: JSON.stringify({ user_id, title, body, url: '/' }),
-    });
-  } catch (_e) { /* no romper el cron por un fallo de push */ }
+// Envío DIRECTO (web-push + VAPID), sin depender de la función send-push.
+let vapidReady = false;
+function ensureVapid(): boolean {
+  if (vapidReady) return true;
+  const pub = Deno.env.get('VAPID_PUBLIC_KEY');
+  const priv = Deno.env.get('VAPID_PRIVATE_KEY');
+  if (!pub || !priv) return false;
+  webpush.setVapidDetails(Deno.env.get('VAPID_SUBJECT') ?? 'mailto:admin@quiniela.app', pub, priv);
+  vapidReady = true;
+  return true;
+}
+
+async function sendPush(supabase: SupabaseClient, user_id: string, title: string, body: string) {
+  if (!ensureVapid()) return;
+  const { data: subs } = await supabase
+    .from('push_subscriptions')
+    .select('endpoint, p256dh, auth')
+    .eq('user_id', user_id);
+  const payload = JSON.stringify({ title, body, url: '/' });
+  for (const s of subs ?? []) {
+    try {
+      // deno-lint-ignore no-explicit-any
+      const ss = s as any;
+      await webpush.sendNotification({ endpoint: ss.endpoint, keys: { p256dh: ss.p256dh, auth: ss.auth } }, payload);
+    } catch (e) {
+      const code = (e as { statusCode?: number }).statusCode;
+      if (code === 404 || code === 410) await supabase.from('push_subscriptions').delete().eq('endpoint', (s as { endpoint: string }).endpoint);
+    }
+  }
 }
 
 Deno.serve(async () => {
@@ -65,8 +87,7 @@ Deno.serve(async () => {
       if (notifiedUsers.has(uid)) continue;
       notifiedUsers.add(uid);
       await sendPush(
-        SUPABASE_URL,
-        SERVICE_ROLE,
+        supabase,
         uid,
         '⏰ ¡Cierran pronósticos!',
         'Te faltan partidos por pronosticar antes de que cierren. ¡No te quedes fuera!',
