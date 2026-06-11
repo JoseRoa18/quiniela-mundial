@@ -150,17 +150,20 @@ Deno.serve(async (req: Request) => {
   const correctedIds: string[] = [];
   let updated = 0;
 
+  // Recolectar eventos ÚNICOS de las fechas. Un partido puede aparecer en dos
+  // ventanas (ESPN agrupa por su zona horaria); sin dedupe se duplican los avisos.
+  // deno-lint-ignore no-explicit-any
+  const eventsById = new Map<string, any>();
   for (const date of dates) {
-    // deno-lint-ignore no-explicit-any
-    let evs: any[] = [];
     try {
       const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${date}`, {
         headers: { 'User-Agent': 'Mozilla/5.0' },
       });
-      if (r.ok) evs = (await r.json()).events ?? [];
-    } catch (_e) { continue; }
+      if (r.ok) for (const ev of (await r.json()).events ?? []) eventsById.set(ev.id, ev);
+    } catch (_e) { /* seguir con las demás fechas */ }
+  }
 
-    for (const e of evs) {
+  for (const e of eventsById.values()) {
       const comp = e.competitions?.[0];
       if (!comp) continue;
       // deno-lint-ignore no-explicit-any
@@ -188,8 +191,9 @@ Deno.serve(async (req: Request) => {
       const ns = mapStatus(apiName);
       const hp = parseInt(cs.home.score ?? '', 10);
       const ap = parseInt(cs.away.score ?? '', 10);
-      const nh = Number.isFinite(hp) ? hp : null;
-      const naw = Number.isFinite(ap) ? ap : null;
+      // Si aún no empieza, sin marcador (ESPN devuelve 0-0 por defecto).
+      const nh = apiName === 'TIMED' ? null : (Number.isFinite(hp) ? hp : null);
+      const naw = apiName === 'TIMED' ? null : (Number.isFinite(ap) ? ap : null);
 
       const pa = m.api_status;
       const home = m.home_team;
@@ -221,8 +225,11 @@ Deno.serve(async (req: Request) => {
           .update({ status: ns, home_score: nh, away_score: naw, api_status: apiName })
           .eq('id', m.id);
         updated++;
+        // Reflejar en memoria por si el mismo partido se procesara de nuevo.
+        m.api_status = apiName;
+        m.home_score = nh;
+        m.away_score = naw;
       }
-    }
   }
 
   // ----- Re-cálculo por corrección -----
