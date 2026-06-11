@@ -158,7 +158,8 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className="relative flex flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-semibold transition-colors"
+      aria-current={active ? 'page' : undefined}
+      className="relative flex min-h-[44px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-semibold transition-colors"
     >
       {active && (
         <motion.span
@@ -167,8 +168,8 @@ function TabButton({
           transition={{ type: 'spring', stiffness: 500, damping: 40 }}
         />
       )}
-      <span className={`relative z-10 ${active ? 'text-accent' : 'text-white/50'}`}>{icon}</span>
-      <span className={`relative z-10 ${active ? 'text-accent' : 'text-white/45'}`}>{label}</span>
+      <span className={`relative z-10 ${active ? 'text-accent' : 'text-white/55'}`}>{icon}</span>
+      <span className={`relative z-10 ${active ? 'text-accent' : 'text-white/55'}`}>{label}</span>
     </button>
   );
 }

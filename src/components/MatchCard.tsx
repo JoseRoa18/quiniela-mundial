@@ -133,7 +133,6 @@ function Crest({ team }: { team: Team }) {
   return (
     <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10">
       {team.logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={team.logoUrl}
           alt={team.name}
@@ -312,7 +311,7 @@ export default function MatchCard({
             <span className="flex items-center gap-1 truncate text-[11px] font-bold uppercase tracking-wider text-gold/90">
               {stage.short} <Info className="h-3 w-3 opacity-60" />
             </span>
-            <span className="truncate text-[11px] capitalize text-white/40">
+            <span className="truncate text-[11px] capitalize text-white/55">
               {formatKickoff(startTime)}
             </span>
           </button>

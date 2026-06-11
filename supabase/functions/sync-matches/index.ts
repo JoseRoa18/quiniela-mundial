@@ -29,6 +29,17 @@ function mapStatus(s: string): 'pending' | 'in_progress' | 'finished' {
   return 'pending';
 }
 
+// REGLA: todo se decide en los 90 minutos. En eliminatorias, score.fullTime
+// incluye la prórroga; el resultado de 90' está en score.regularTime. Por eso,
+// si el partido ya terminó y hubo prórroga, usamos regularTime. En vivo o en
+// grupos (sin regularTime) usamos fullTime.
+// deno-lint-ignore no-explicit-any
+function pickScore(m: any, side: 'home' | 'away'): number | null {
+  const ft = m.score?.fullTime?.[side] ?? null;
+  const rt = m.score?.regularTime?.[side] ?? null;
+  return (mapStatus(m.status) === 'finished' ? (rt ?? ft) : ft);
+}
+
 // deno-lint-ignore no-explicit-any
 function mapMatchday(m: any): number {
   if (m.stage === 'GROUP_STAGE' && m.matchday) return m.matchday;
@@ -46,8 +57,8 @@ function toRow(m: any) {
     away_team_logo: m.awayTeam?.crest ?? null,
     start_time: m.utcDate,
     status: mapStatus(m.status),
-    home_score: m.score?.fullTime?.home ?? null,
-    away_score: m.score?.fullTime?.away ?? null,
+    home_score: pickScore(m, 'home'),
+    away_score: pickScore(m, 'away'),
     stage: m.stage ?? null,
     group_name: m.group ?? null,
     api_status: m.status ?? null,
@@ -136,8 +147,8 @@ Deno.serve(async (req: Request) => {
     if (!p) continue; // partido nuevo: sin evento
     const pa = p.api_status;
     const ns: string = m.status;
-    const nh = m.score?.fullTime?.home ?? null;
-    const naw = m.score?.fullTime?.away ?? null;
+    const nh = pickScore(m, 'home');
+    const naw = pickScore(m, 'away');
     const scoreChanged = nh !== p.home_score || naw !== p.away_score;
     const home = m.homeTeam?.name ?? 'Local';
     const away = m.awayTeam?.name ?? 'Visitante';

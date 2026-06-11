@@ -13,20 +13,28 @@ let channelSeq = 0;
 export function useAllPredictions(userId: string | undefined) {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
     let active = true;
 
     async function load() {
-      const { data } = await supabase
-        .from('predictions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-      if (active) {
-        setPredictions((data as Prediction[]) ?? []);
-        setLoading(false);
+      try {
+        const { data, error: err } = await supabase
+          .from('predictions')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+        if (err) throw err;
+        if (active) {
+          setPredictions((data as Prediction[]) ?? []);
+          setError(false);
+        }
+      } catch {
+        if (active) setError(true);
+      } finally {
+        if (active) setLoading(false);
       }
     }
     void load();
@@ -46,5 +54,5 @@ export function useAllPredictions(userId: string | undefined) {
     };
   }, [userId]);
 
-  return { predictions, loading };
+  return { predictions, loading, error };
 }

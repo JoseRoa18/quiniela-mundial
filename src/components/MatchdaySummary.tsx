@@ -5,6 +5,7 @@ import { useAllMatches } from '../hooks/useAllMatches';
 import { stageForMatchday } from '../lib/worldcup';
 import MatchdaySelector from './MatchdaySelector';
 import { useMatchDetail } from './MatchDetail';
+import ErrorState from './ErrorState';
 import type { Match } from '../types/database';
 
 const MEDAL: Record<number, string> = { 1: '#FFC83D', 2: '#C9D3E0', 3: '#E08B4F' };
@@ -31,7 +32,7 @@ function ResultRow({ m, onClick }: { m: Match; onClick: () => void }) {
 
 export default function MatchdaySummary({ username }: { username: string }) {
   const [matchday, setMatchday] = useState(1);
-  const { rows, loading } = useLeaderboard(matchday);
+  const { rows, loading, error, reload } = useLeaderboard(matchday);
   const { matches } = useAllMatches();
   const { open } = useMatchDetail();
 
@@ -44,6 +45,8 @@ export default function MatchdaySummary({ username }: { username: string }) {
   const totalPlenos = participants.reduce((s, r) => s + r.plenos, 0);
   const finishedCount = mdMatches.filter((m) => m.status === 'finished').length;
   const stage = stageForMatchday(matchday);
+
+  if (error) return <ErrorState onRetry={reload} />;
 
   return (
     <div className="space-y-4">

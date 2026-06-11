@@ -7,6 +7,7 @@ import { stageForMatchday, formatKickoff } from '../lib/worldcup';
 import { RESULT_META } from '../lib/results';
 import { useMatchDetail } from './MatchDetail';
 import Achievements from './Achievements';
+import ErrorState from './ErrorState';
 import type { Match, Prediction } from '../types/database';
 
 function PredictionRow({ pred, match, index }: { pred: Prediction; match: Match | undefined; index: number }) {
@@ -78,7 +79,7 @@ function PredictionRow({ pred, match, index }: { pred: Prediction; match: Match 
 }
 
 export default function MyPredictions({ userId }: { userId: string }) {
-  const { predictions, loading } = useAllPredictions(userId);
+  const { predictions, loading, error } = useAllPredictions(userId);
   const { matches } = useAllMatches();
 
   const matchById = useMemo(() => {
@@ -93,6 +94,8 @@ export default function MyPredictions({ userId }: { userId: string }) {
     const points = predictions.reduce((sum, p) => sum + (p.points_earned ?? 0), 0);
     return { total: predictions.length, plenos, tendencias, points };
   }, [predictions]);
+
+  if (error) return <ErrorState />;
 
   if (loading) {
     return (

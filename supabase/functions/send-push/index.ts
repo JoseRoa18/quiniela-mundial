@@ -29,6 +29,13 @@ interface SubRow {
 }
 
 Deno.serve(async (req: Request) => {
+  // Seguridad: solo se puede invocar con el service_role (no con la anon key,
+  // que es pública). Evita que cualquiera haga broadcast de notificaciones.
+  const auth = req.headers.get('Authorization') ?? '';
+  if (auth !== `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`) {
+    return json({ error: 'No autorizado' }, 401);
+  }
+
   const pub = Deno.env.get('VAPID_PUBLIC_KEY');
   const priv = Deno.env.get('VAPID_PRIVATE_KEY');
   const subject = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:admin@quiniela.app';

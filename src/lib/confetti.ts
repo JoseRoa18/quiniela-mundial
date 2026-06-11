@@ -2,13 +2,19 @@ import confetti from 'canvas-confetti';
 
 const ACCENT = '#00E5A0';
 const ELECTRIC = '#2D7BFF';
-const GOLD = '#FFD166';
+const GOLD = '#FFC83D';
+
+/** Respeta la preferencia de movimiento reducido del sistema. */
+function reducedMotion(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
 
 /**
  * Lanza una celebración de confeti (al hacer pleno). Doble ráfaga desde los
  * laterales para un efecto más "premium".
  */
 export function celebratePleno(): void {
+  if (reducedMotion()) return;
   const colors = [ACCENT, ELECTRIC, GOLD, '#FFFFFF'];
   const end = Date.now() + 900;
 
@@ -47,6 +53,7 @@ export function celebratePleno(): void {
  * con tonos de oro (efecto trofeo).
  */
 export function celebrateAchievement(): void {
+  if (reducedMotion()) return;
   const colors = [GOLD, '#FFE7A0', ACCENT, '#FFFFFF'];
   confetti({
     particleCount: 80,

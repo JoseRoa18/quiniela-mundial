@@ -115,9 +115,11 @@ function MatchDetailModal({
 
             {/* Marcador / equipos */}
             <div className="mb-1 flex items-center justify-between gap-2">
-              <div className="flex flex-1 flex-col items-center gap-2">
+              <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
                 <Crest name={match.home_team} logo={match.home_team_logo} />
-                <span className="text-center text-sm font-semibold text-white/90">{match.home_team}</span>
+                <span className="line-clamp-2 w-full break-words text-center text-sm font-semibold text-white/90">
+                  {match.home_team}
+                </span>
               </div>
               <div className="flex flex-col items-center gap-1.5">
                 {played ? (
@@ -137,9 +139,11 @@ function MatchDetailModal({
                   <span className="text-[11px] text-white/40">Por jugar</span>
                 )}
               </div>
-              <div className="flex flex-1 flex-col items-center gap-2">
+              <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
                 <Crest name={match.away_team} logo={match.away_team_logo} />
-                <span className="text-center text-sm font-semibold text-white/90">{match.away_team}</span>
+                <span className="line-clamp-2 w-full break-words text-center text-sm font-semibold text-white/90">
+                  {match.away_team}
+                </span>
               </div>
             </div>
 

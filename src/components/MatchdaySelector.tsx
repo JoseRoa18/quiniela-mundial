@@ -31,7 +31,8 @@ export default function MatchdaySelector({ value, onChange, layoutId = 'md-pill'
             key={md}
             type="button"
             onClick={() => onChange(md)}
-            className="relative shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors"
+            aria-pressed={active}
+            className="relative flex min-h-[40px] shrink-0 items-center rounded-full px-3.5 text-xs font-semibold transition-colors"
           >
             {active && (
               <motion.span
@@ -40,7 +41,7 @@ export default function MatchdaySelector({ value, onChange, layoutId = 'md-pill'
                 transition={{ type: 'spring', stiffness: 500, damping: 40 }}
               />
             )}
-            <span className={`relative z-10 ${active ? 'text-accent' : 'text-white/45'}`}>{label}</span>
+            <span className={`relative z-10 ${active ? 'text-accent' : 'text-white/60'}`}>{label}</span>
           </button>
         );
       })}
