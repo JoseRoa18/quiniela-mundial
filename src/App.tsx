@@ -15,6 +15,7 @@ import Rules from './components/Rules';
 import { MatchDetailProvider } from './components/MatchDetail';
 import AchievementWatcher from './components/AchievementWatcher';
 import PushButton from './components/PushButton';
+import LiveNow from './components/LiveNow';
 
 type Tab = 'matches' | 'groups' | 'knockout' | 'leaderboard';
 
@@ -95,6 +96,9 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      {/* Partidos en vivo ahora mismo (visible en todas las pestañas) */}
+      <LiveNow />
 
       {/* Contenido con transición entre pestañas (sin mode="wait" para evitar
           el bloqueo de AnimatePresence al salir de pestañas con animaciones layout). */}
