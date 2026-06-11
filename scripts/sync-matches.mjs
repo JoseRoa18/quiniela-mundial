@@ -82,6 +82,7 @@ function toRow(m) {
     away_score: m.score?.fullTime?.away ?? null,
     stage: m.stage ?? null,
     group_name: m.group ?? null,
+    api_status: m.status ?? null,
     // OJO: NO incluimos is_featured_match a propósito. Al omitirlo, el upsert
     // preserva el destacado que haya elegido set_random_featured_match().
   };
