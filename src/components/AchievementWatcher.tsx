@@ -1,40 +1,42 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAllPredictions } from '../hooks/useAllPredictions';
 import { computeAchievements, type Achievement } from '../lib/achievements';
-import { celebrateAchievement } from '../lib/confetti';
+import { celebrateAchievement, celebratePleno } from '../lib/confetti';
 
 /**
- * Vigila los logros del usuario. Cuando uno pasa de bloqueado a conseguido,
- * lanza confeti y muestra un cartel con el logro y por qué se ganó.
- * Usa localStorage para no recelebrar logros ya vistos.
+ * Vigila los logros y plenos del usuario. Cuando un logro pasa de bloqueado a
+ * conseguido —en vivo o mientras la app estuvo cerrada— lanza confeti y muestra
+ * un cartel. Lo mismo con los plenos nuevos (confeti grande).
+ * La siembra silenciosa (marcar como visto sin celebrar) solo ocurre la primera
+ * vez que el usuario usa la app en este dispositivo.
  */
 export default function AchievementWatcher({ userId }: { userId: string }) {
   const { predictions, loading } = useAllPredictions(userId);
   const achievements = useMemo(() => computeAchievements(predictions), [predictions]);
   const [queue, setQueue] = useState<Achievement[]>([]);
-  const seeded = useRef(false);
 
-  // Detectar logros nuevos
+  // Detectar logros nuevos (incluye los ganados con la app cerrada)
   useEffect(() => {
     if (loading) return;
     // v2: se reinició tras limpiar la BD (las marcas viejas ya no aplican).
     const key = 'ach_seen_v2_' + userId;
-    let seen: string[] = [];
-    try {
-      seen = JSON.parse(localStorage.getItem(key) || '[]');
-    } catch {
-      seen = [];
-    }
+    const stored = localStorage.getItem(key);
     const earnedIds = achievements.filter((a) => a.earned).map((a) => a.id);
 
-    // Primera carga: sembrar silenciosamente lo ya conseguido (no recelebrar).
-    if (!seeded.current) {
-      seeded.current = true;
-      localStorage.setItem(key, JSON.stringify([...new Set([...seen, ...earnedIds])]));
+    // Primera vez en este dispositivo: sembrar silenciosamente (no celebrar
+    // de golpe todo el historial de un usuario que ya venía jugando).
+    if (stored === null) {
+      localStorage.setItem(key, JSON.stringify(earnedIds));
       return;
     }
 
+    let seen: string[] = [];
+    try {
+      seen = JSON.parse(stored);
+    } catch {
+      seen = [];
+    }
     const seenSet = new Set(seen);
     const newly = achievements.filter((a) => a.earned && !seenSet.has(a.id));
     if (newly.length > 0) {
@@ -42,6 +44,32 @@ export default function AchievementWatcher({ userId }: { userId: string }) {
       localStorage.setItem(key, JSON.stringify([...new Set([...seen, ...newly.map((a) => a.id)])]));
     }
   }, [achievements, loading, userId]);
+
+  // Detectar plenos nuevos: confeti grande, en vivo o al reabrir la app.
+  useEffect(() => {
+    if (loading) return;
+    const key = 'plenos_seen_v1_' + userId;
+    const stored = localStorage.getItem(key);
+    const plenoIds = predictions.filter((p) => p.result_type === 'pleno').map((p) => p.id);
+
+    if (stored === null) {
+      localStorage.setItem(key, JSON.stringify(plenoIds));
+      return;
+    }
+
+    let seen: string[] = [];
+    try {
+      seen = JSON.parse(stored);
+    } catch {
+      seen = [];
+    }
+    const seenSet = new Set(seen);
+    const newly = plenoIds.filter((id) => !seenSet.has(id));
+    if (newly.length > 0) {
+      celebratePleno();
+      localStorage.setItem(key, JSON.stringify([...new Set([...seen, ...newly])]));
+    }
+  }, [predictions, loading, userId]);
 
   // Mostrar uno a uno con confeti
   const current = queue[0];

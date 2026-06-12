@@ -25,7 +25,7 @@ App web progresiva para pronosticar partidos, sumar puntos y competir en una tab
 quiniela-deportiva/
 ├── src/
 │   ├── components/      MatchCard, MatchList, Leaderboard, Auth
-│   ├── hooks/           useAuth, useMatches, usePredictions, useLeaderboard, useCelebration
+│   ├── hooks/           useAuth, useMatches, usePredictions, useLeaderboard
 │   ├── lib/             supabase (cliente), calculatePoints (puntuación), confetti
 │   ├── types/           database.ts (tipos del esquema)
 │   ├── App.tsx          shell + navegación

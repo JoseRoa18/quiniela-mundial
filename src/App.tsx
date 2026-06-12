@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { HelpCircle, LayoutGrid, ListChecks, LogOut, Swords, Trophy } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAuth } from './hooks/useAuth';
-import { useCelebration } from './hooks/useCelebration';
 import { stageForMatchday, HOST_FLAGS } from './lib/worldcup';
 import Auth from './components/Auth';
 import MatchList from './components/MatchList';
@@ -31,9 +30,6 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('matches');
   const [matchday, setMatchday] = useState(1);
   const [rulesOpen, setRulesOpen] = useState(false);
-
-  // Confeti al hacer pleno (escucha Realtime)
-  useCelebration(user?.id);
 
   if (loading) {
     return (
