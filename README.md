@@ -149,6 +149,19 @@ select cron.schedule(
   $$
 );
 
+-- Recordatorio de cierre: avisar por push a quien aún no ha pronosticado
+-- partidos que cierran pronto (cada 10 min).
+select cron.schedule(
+  'notify-reminders-cron',
+  '*/10 * * * *',
+  $$
+    select net.http_post(
+      url     := 'https://TU-PROJECT-REF.functions.supabase.co/notify-reminders',
+      headers := jsonb_build_object('Authorization', 'Bearer TU-ANON-KEY')
+    );
+  $$
+);
+
 -- Alternativa sin Edge Function para el destacado: llamar la función SQL directamente.
 -- (Ejecútalo al abrir cada jornada, ajustando el número.)
 select public.set_random_featured_match(1);

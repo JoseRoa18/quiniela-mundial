@@ -79,6 +79,9 @@ function MatchDetailModal({
   const finished = match?.status === 'finished';
   const played = live || finished;
   const stage = match ? stageForMatchday(match.matchday) : null;
+  // Los pronósticos ajenos se revelan al cerrarse (30 min antes) o si ya empezó.
+  const revealed =
+    !!match && (match.status !== 'pending' || Date.now() >= new Date(match.start_time).getTime() - 30 * 60_000);
 
   return (
     <AnimatePresence>
@@ -172,7 +175,9 @@ function MatchDetailModal({
               <div className="flex flex-col items-center gap-2 rounded-2xl bg-white/[0.03] py-8 text-center ring-1 ring-white/10">
                 <Lock className="h-6 w-6 text-white/25" />
                 <p className="px-6 text-xs text-white/40">
-                  Los pronósticos se revelan cuando se cierran (30 min antes del inicio).
+                  {revealed
+                    ? 'Nadie pronosticó este partido.'
+                    : 'Los pronósticos se revelan cuando se cierran (30 min antes del inicio).'}
                 </p>
               </div>
             ) : (

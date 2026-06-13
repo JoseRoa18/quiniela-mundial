@@ -7,6 +7,7 @@ import { stageForMatchday, formatKickoff } from '../lib/worldcup';
 import { RESULT_META } from '../lib/results';
 import { useMatchDetail } from './MatchDetail';
 import Achievements from './Achievements';
+import PlayerStats from './PlayerStats';
 import ErrorState from './ErrorState';
 import type { Match, Prediction } from '../types/database';
 
@@ -88,13 +89,6 @@ export default function MyPredictions({ userId }: { userId: string }) {
     return m;
   }, [matches]);
 
-  const stats = useMemo(() => {
-    const plenos = predictions.filter((p) => p.result_type === 'pleno').length;
-    const tendencias = predictions.filter((p) => p.result_type === 'tendencia').length;
-    const points = predictions.reduce((sum, p) => sum + (p.points_earned ?? 0), 0);
-    return { total: predictions.length, plenos, tendencias, points };
-  }, [predictions]);
-
   if (error) return <ErrorState />;
 
   if (loading) {
@@ -119,21 +113,8 @@ export default function MyPredictions({ userId }: { userId: string }) {
 
   return (
     <div className="space-y-4">
-      {/* Resumen */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-2xl bg-accent/10 px-3 py-3 text-center ring-1 ring-accent/30">
-          <p className="font-mono text-xl font-bold text-accent">{stats.points}</p>
-          <p className="text-[10px] uppercase tracking-wider text-white/40">Puntos</p>
-        </div>
-        <div className="rounded-2xl bg-white/[0.03] px-3 py-3 text-center ring-1 ring-white/10">
-          <p className="font-mono text-xl font-bold text-white">{stats.plenos}</p>
-          <p className="text-[10px] uppercase tracking-wider text-white/40">Plenos</p>
-        </div>
-        <div className="rounded-2xl bg-white/[0.03] px-3 py-3 text-center ring-1 ring-white/10">
-          <p className="font-mono text-xl font-bold text-white">{stats.total}</p>
-          <p className="text-[10px] uppercase tracking-wider text-white/40">Pronósticos</p>
-        </div>
-      </div>
+      {/* Estadísticas personales */}
+      <PlayerStats predictions={predictions} matchById={matchById} />
 
       {/* Logros */}
       <Achievements predictions={predictions} />
