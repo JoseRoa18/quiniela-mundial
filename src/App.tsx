@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { HelpCircle, LayoutGrid, ListChecks, LogOut, Swords, Trophy } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAuth } from './hooks/useAuth';
+import { useCurrentMatchday } from './hooks/useCurrentMatchday';
 import { stageForMatchday, HOST_FLAGS } from './lib/worldcup';
 import Auth from './components/Auth';
 import MatchList from './components/MatchList';
@@ -28,8 +29,11 @@ const TABS: Array<{ id: Tab; label: string; icon: LucideIcon }> = [
 export default function App() {
   const { user, profile, loading, signIn, signUp, signOut } = useAuth();
   const [tab, setTab] = useState<Tab>('matches');
-  const [matchday, setMatchday] = useState(1);
+  // `matchday` null = aún no elegida manualmente: seguimos la jornada actual.
+  const currentMatchday = useCurrentMatchday();
+  const [matchday, setMatchday] = useState<number | null>(null);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const activeMatchday = matchday ?? currentMatchday ?? 1;
 
   if (loading) {
     return (
@@ -43,7 +47,7 @@ export default function App() {
     return <Auth signIn={signIn} signUp={signUp} />;
   }
 
-  const stage = stageForMatchday(matchday);
+  const stage = stageForMatchday(activeMatchday);
 
   return (
     <MatchDetailProvider username={profile?.username ?? ''}>
@@ -107,8 +111,8 @@ export default function App() {
         >
           {tab === 'matches' && (
             <>
-              <MatchdaySelector value={matchday} onChange={setMatchday} />
-              <MatchList userId={user.id} matchday={matchday} />
+              <MatchdaySelector value={activeMatchday} onChange={setMatchday} />
+              <MatchList userId={user.id} matchday={activeMatchday} />
             </>
           )}
           {tab === 'groups' && <Groups />}

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Crown, Sparkles } from 'lucide-react';
 import { useLeaderboard } from '../hooks/useLeaderboard';
 import { useAllMatches } from '../hooks/useAllMatches';
+import { useCurrentMatchday } from '../hooks/useCurrentMatchday';
 import { stageForMatchday } from '../lib/worldcup';
 import MatchdaySelector from './MatchdaySelector';
 import { useMatchDetail } from './MatchDetail';
@@ -31,7 +32,10 @@ function ResultRow({ m, onClick }: { m: Match; onClick: () => void }) {
 }
 
 export default function MatchdaySummary({ username }: { username: string }) {
-  const [matchday, setMatchday] = useState(1);
+  // null = aún no elegida manualmente: seguimos la jornada actual.
+  const currentMatchday = useCurrentMatchday();
+  const [picked, setPicked] = useState<number | null>(null);
+  const matchday = picked ?? currentMatchday ?? 1;
   const { rows, loading, error, reload } = useLeaderboard(matchday);
   const { matches } = useAllMatches();
   const { open } = useMatchDetail();
@@ -50,7 +54,7 @@ export default function MatchdaySummary({ username }: { username: string }) {
 
   return (
     <div className="space-y-4">
-      <MatchdaySelector value={matchday} onChange={setMatchday} layoutId="md-pill-resumen" />
+      <MatchdaySelector value={matchday} onChange={setPicked} layoutId="md-pill-resumen" />
 
       <p className="text-center text-sm font-bold text-gold">{stage.label}</p>
 
