@@ -126,6 +126,10 @@ Deno.serve(async (req: Request) => {
   const url = new URL(req.url);
   const cleanDemo = url.searchParams.get('clean_demo') === 'true';
   const silent = url.searchParams.get('silent') === 'true';
+  // ?skip_structure=true -> no consulta football-data (la estructura casi no
+  // cambia). Permite correr el sync EN VIVO cada minuto sin gastar cuota de la
+  // API ni añadir su latencia. Programa un cron aparte, lento, para la estructura.
+  const skipStructure = url.searchParams.get('skip_structure') === 'true';
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -138,7 +142,7 @@ Deno.serve(async (req: Request) => {
   // ----- 1) ESTRUCTURA desde football-data (no toca estado/marcador) -----
   const token = Deno.env.get('FOOTBALL_DATA_TOKEN');
   let structureCount = 0;
-  if (token) {
+  if (token && !skipStructure) {
     try {
       const fd = await fetch('https://api.football-data.org/v4/competitions/WC/matches?season=2026', {
         headers: { 'X-Auth-Token': token },

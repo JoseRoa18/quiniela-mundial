@@ -133,14 +133,42 @@ curl -X POST "https://TU-PROJECT-REF.functions.supabase.co/score-matches?task=fe
 
 ## ⏰ Automatizar con cron (pg_cron)
 
-En el **SQL Editor**, activa la extensión y programa las tareas:
+En el **SQL Editor**, activa la extensión y programa las tareas. Para que los
+avisos de gol y de puntos lleguen casi al instante, el sync EN VIVO y el cálculo
+de puntos corren **cada minuto** (lo mínimo de pg_cron); la estructura de
+partidos (football-data) se refresca aparte cada 30 min para no gastar cuota.
 ```sql
 create extension if not exists pg_cron;
 
--- Calcular puntos cada 5 minutos
+-- 1) Estado + marcador EN VIVO (ESPN) cada minuto. skip_structure=true evita
+--    llamar a football-data en cada pasada -> sync ligero y sin latencia extra.
+select cron.schedule(
+  'sync-live-cron',
+  '* * * * *',
+  $$
+    select net.http_post(
+      url     := 'https://TU-PROJECT-REF.functions.supabase.co/sync-matches?skip_structure=true',
+      headers := jsonb_build_object('Authorization', 'Bearer TU-ANON-KEY')
+    );
+  $$
+);
+
+-- 2) Estructura (equipos, fechas, fase, escudos) desde football-data cada 30 min.
+select cron.schedule(
+  'sync-structure-cron',
+  '*/30 * * * *',
+  $$
+    select net.http_post(
+      url     := 'https://TU-PROJECT-REF.functions.supabase.co/sync-matches?silent=true',
+      headers := jsonb_build_object('Authorization', 'Bearer TU-ANON-KEY')
+    );
+  $$
+);
+
+-- 3) Calcular puntos cada minuto (idempotente: solo califica lo pendiente).
 select cron.schedule(
   'score-matches-cron',
-  '*/5 * * * *',
+  '* * * * *',
   $$
     select net.http_post(
       url     := 'https://TU-PROJECT-REF.functions.supabase.co/score-matches',
@@ -168,6 +196,12 @@ select public.set_random_featured_match(1);
 ```
 > `net.http_post` viene de la extensión `pg_net` (disponible en Supabase). Si no
 > está activa: `create extension if not exists pg_net;`
+>
+> **Si ya tenías crons antiguos** (p. ej. `sync-matches-cron` o `score-matches-cron`
+> cada 5 min), reemplázalos para que no se dupliquen. Mira los activos con
+> `select jobname, schedule from cron.job;` y elimina los que sobren con
+> `select cron.unschedule('NOMBRE-DEL-JOB');`. (Volver a llamar `cron.schedule`
+> con el mismo nombre también lo reprograma.)
 
 ---
 
