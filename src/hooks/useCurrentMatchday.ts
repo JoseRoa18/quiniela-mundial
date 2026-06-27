@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { MatchStatus } from '../types/database';
 
+// Nombres de canal únicos: el hook se usa en varios sitios a la vez (App y
+// MatchdaySummary). Dos canales con el mismo nombre suscritos rompen Realtime.
+let channelSeq = 0;
+
 interface MdRow {
   matchday: number;
   status: MatchStatus;
@@ -41,7 +45,7 @@ export function useCurrentMatchday(): number | null {
     void load();
 
     const channel = supabase
-      .channel('current-matchday')
+      .channel(`current-matchday-${++channelSeq}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => void load())
       .subscribe();
 
