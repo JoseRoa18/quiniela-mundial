@@ -81,6 +81,31 @@ async function broadcast(supabase: SupabaseClient, title: string, body: string):
 function normTeam(s: string): string {
   return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
 }
+
+// Similitud 0..1 entre dos nombres de equipo, tolerante a variantes de fuente
+// (p. ej. "Türkiye"/"Turkey", "Cape Verde"/"Cape Verde Islands", "USA"/"United States").
+function teamSim(a: string, b: string): number {
+  const x = normTeam(a);
+  const y = normTeam(b);
+  if (!x || !y) return 0;
+  if (x === y) return 1;
+  if (x.includes(y) || y.includes(x)) return 0.9; // uno contiene al otro
+  // Coeficiente de Dice sobre bigramas de caracteres.
+  const bigrams = (s: string): Map<string, number> => {
+    const m = new Map<string, number>();
+    for (let i = 0; i < s.length - 1; i++) {
+      const g = s.slice(i, i + 2);
+      m.set(g, (m.get(g) ?? 0) + 1);
+    }
+    return m;
+  };
+  const A = bigrams(x);
+  const B = bigrams(y);
+  let inter = 0;
+  for (const [g, c] of A) inter += Math.min(c, B.get(g) ?? 0);
+  const total = (x.length - 1) + (y.length - 1);
+  return total > 0 ? (2 * inter) / total : 0;
+}
 // deno-lint-ignore no-explicit-any
 function espnApiStatus(type: any): string {
   const state = type?.state;
@@ -143,7 +168,15 @@ Deno.serve(async (req: Request) => {
 
   // ----- 3) ESTADO + MARCADOR EN VIVO desde ESPN -----
   const now = Date.now();
-  const dates = [ymd(new Date(now - 86400000)), ymd(new Date(now)), ymd(new Date(now + 86400000))];
+  // ESPN agrupa por su zona horaria, así que un partido puede caer en el bucket
+  // del día anterior. Miramos 2 días atrás para poder recuperar partidos que se
+  // hubieran quedado sin actualizar (p. ej. por un desajuste puntual).
+  const dates = [
+    ymd(new Date(now - 2 * 86400000)),
+    ymd(new Date(now - 86400000)),
+    ymd(new Date(now)),
+    ymd(new Date(now + 86400000)),
+  ];
   const PRE = ['SCHEDULED', 'TIMED'];
   const PLAY = ['IN_PLAY', 'PAUSED'];
   const events: Array<{ title: string; body: string }> = [];
@@ -177,13 +210,34 @@ Deno.serve(async (req: Request) => {
       if (cands.length === 1) {
         m = cands[0];
       } else if (cands.length > 1) {
-        const eh = normTeam(cs.home.team?.displayName);
-        const ea = normTeam(cs.away.team?.displayName);
-        m = cands.find((c) => normTeam(c.home_team) === eh && normTeam(c.away_team) === ea)
-          ?? cands.find((c) => {
-            const s = new Set([normTeam(c.home_team), normTeam(c.away_team)]);
-            return s.has(eh) && s.has(ea);
-          });
+        const eh = cs.home.team?.displayName ?? '';
+        const ea = cs.away.team?.displayName ?? '';
+        // Coincidencia exacta primero (rápida y segura).
+        const ehn = normTeam(eh);
+        const ean = normTeam(ea);
+        m = cands.find((c) => normTeam(c.home_team) === ehn && normTeam(c.away_team) === ean);
+        // Si no, desempatar por similitud: entre los partidos del mismo horario,
+        // el más parecido por nombre (tolera "Türkiye"/"Turkey", "Cape Verde"/"Cape
+        // Verde Islands", local/visitante invertidos entre fuentes).
+        if (!m) {
+          let best: DbRow | undefined;
+          let bestScore = 0;
+          let secondScore = 0;
+          for (const c of cands) {
+            const ordered = teamSim(eh, c.home_team) + teamSim(ea, c.away_team);
+            const swapped = teamSim(eh, c.away_team) + teamSim(ea, c.home_team);
+            const score = Math.max(ordered, swapped);
+            if (score > bestScore) {
+              secondScore = bestScore;
+              bestScore = score;
+              best = c;
+            } else if (score > secondScore) {
+              secondScore = score;
+            }
+          }
+          // Aceptar solo si hay un ganador claro (evita falsos positivos).
+          if (best && bestScore >= 1.0 && bestScore - secondScore >= 0.3) m = best;
+        }
       }
       if (!m) continue;
 
