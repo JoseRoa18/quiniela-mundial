@@ -98,6 +98,7 @@ export default function Rules({ open, onClose }: RulesProps) {
             <ul className="space-y-1.5 text-sm text-white/60">
               <li className="flex gap-2"><span className="text-accent">•</span> Los pronósticos se <b className="text-white/80">cierran 30 min antes</b> de cada partido.</li>
               <li className="flex gap-2"><span className="text-accent">•</span> Marcadores y puntos se actualizan <b className="text-white/80">en vivo</b> durante los partidos.</li>
+              <li className="flex gap-2"><span className="text-accent">•</span> En eliminatorias cuenta el resultado <b className="text-white/80">hasta los 120'</b> (con prórroga). Los <b className="text-white/80">penales no cuentan</b>: un partido a penales se puntúa como empate.</li>
               <li className="flex gap-2"><span className="text-accent">•</span> Empates en la tabla se rompen por: más plenos, luego menos partidos jugados.</li>
             </ul>
 

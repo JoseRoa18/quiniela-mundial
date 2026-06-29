@@ -247,6 +247,9 @@ Deno.serve(async (req: Request) => {
 
       const apiName = espnApiStatus(e.status?.type);
       const ns = mapStatus(apiName);
+      // `score` de ESPN es el resultado HASTA los 120' (tiempo reglamentario +
+      // prórroga). La tanda de penales va aparte en `shootoutScore` y NO se usa
+      // a propósito: en la quiniela un partido a penales se puntúa como empate.
       const hp = parseInt(cs.home.score ?? '', 10);
       const ap = parseInt(cs.away.score ?? '', 10);
       // Si aún no empieza, sin marcador (ESPN devuelve 0-0 por defecto).
